@@ -86,7 +86,7 @@ Eight dedicated subagents live in `.claude/agents/`. When the user references a 
 | "roleplay", "practice one side of this conversation", "two-person script", "rehearse turn-taking" | `roleplay` | User wants a two-sided dialogue practice script |
 | "travel guide", "how do they get around", "what do I need to know about this place" | `travel-guide` | User wants practical travel logistics from a vlog transcript |
 | "document this course", "course notes", "follow-along guide", "course cheatsheet", "reference doc from this tutorial" | `course-docs` | User wants engineering-quality reference docs from a course transcript |
-| "help me practice English", "turn this into speaking practice", "give me sentences to repeat", "what can I say from this video" | `passive-to-active-english` | User wants a curated spoken-English practice corpus (verbatim lines + Recap + phrase list) |
+| "help me practice English", "turn this into speaking practice", "give me sentences to repeat", "what can I say from this video", "tense practice", "practice tenses with this" | `passive-to-active-english` | User wants tense drilling + phrase practice: scene Recaps (3rd-person) → same events in 4 first-person tenses → Phrases Worth Reviewing + Fill-in-the-Blank with 3 variations each. No verbatim line extraction (use `speaking` for that). |
 
 Pass the full file content to the agent in the prompt. The agent writes its own output file — derive the output path from the input filename using the suffix conventions: `-summary.md`, `-speaking.md`, `-organized.md`, `-roleplay.md`, `-travel-guide.md`, `-infographic.html`, `-course-docs.md`, `-speaking-practice.md`.
 

@@ -54,7 +54,7 @@ Skills live in `.claude/skills/<name>/SKILL.md`. They are invoked inside Claude 
 | `travel-guide` | `-travel-guide.md` | Practical travel briefing with logistics and costs |
 | `infographic` | `-infographic.html` | Self-contained HTML infographic with embedded CSS |
 | `course-docs` | `-course-docs.md` | Engineering-quality reference doc from a course transcript |
-| `passive-to-active-english` | `-speaking-practice.md` | Curated spoken-English practice corpus (verbatim lines + Recap + phrase list) |
+| `passive-to-active-english` | `-speaking-practice.md` | Tense drilling + phrase practice: scene Recaps in 3rd-person, then same events in 4 first-person tenses (past/present/future/present perfect), plus Phrases Worth Reviewing and a Fill-in-the-Blank section with 3 spoken variations per frame |
 
 ---
 
@@ -63,7 +63,7 @@ Skills live in `.claude/skills/<name>/SKILL.md`. They are invoked inside Claude 
 | Skill | Trigger phrases |
 |-------|----------------|
 | `course-docs` | "document this course", "create notes for this tutorial", "follow-along guide", "course cheatsheet" |
-| `passive-to-active-english` | "help me practice English with this", "turn this into speaking practice", "give me sentences to repeat" |
+| `passive-to-active-english` | "help me practice English with this", "turn this into speaking practice", "give me sentences to repeat", "tense practice", "practice tenses with this" |
 
 ---
 
