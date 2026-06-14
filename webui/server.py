@@ -46,6 +46,8 @@ MODE_SUFFIX = {
     "roleplay": "-roleplay.md",
     "travel-guide": "-travel-guide.md",
     "infographic": "-infographic.html",
+    "course-docs": "-course-docs.md",
+    "passive-to-active-english": "-speaking-practice.md",
 }
 
 # Model aliases offered in the UI. Aliases are accepted by `claude --model` and
@@ -198,6 +200,16 @@ def run_claude(text: str, prompt: str, model: str | None = None,
 def output_name_for(input_name: str, mode: str) -> str:
     """Derive the output filename from the input name + mode."""
     stem = Path(input_name).stem
+    # Strip any previously appended mode suffix so re-processing an output
+    # file doesn't accumulate prefixes (e.g. "foo-organized-speaking-practice").
+    known_suffixes = [
+        "-organized", "-formatted", "-speaking", "-summary", "-roleplay",
+        "-travel-guide", "-infographic", "-course-docs", "-speaking-practice",
+    ]
+    for s in known_suffixes:
+        if stem.endswith(s):
+            stem = stem[: -len(s)]
+            break
     suffix = MODE_SUFFIX.get(mode, f"-{mode}.md")
     if mode == "organize" and Path(input_name).suffix.lower() == ".md":
         suffix = "-formatted.md"

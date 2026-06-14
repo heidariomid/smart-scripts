@@ -75,7 +75,7 @@ Before adding many modes, refactor to the `MODES = {...}` registry described in 
 
 ## Agent routing — automatic dispatch
 
-Three dedicated subagents live in `.claude/agents/`. When the user references a transcript or text file and asks for one of the modes below, **always invoke the matching agent automatically** — do not ask the user to specify it.
+Eight dedicated subagents live in `.claude/agents/`. When the user references a transcript or text file and asks for one of the modes below, **always invoke the matching agent automatically** — do not ask the user to specify it.
 
 | Trigger | Agent | When to fire |
 | --- | --- | --- |
@@ -83,12 +83,16 @@ Three dedicated subagents live in `.claude/agents/`. When the user references a 
 | "speaking practice", "lines to practice", "speaking mode", "practice English", "rehearsal" | `speaking` | User wants verbatim spoken lines + Recap paragraphs |
 | "organize", "format", "clean up", "make this Markdown", "reformat" | `organize` | User wants faithful Markdown reformat of raw text |
 | "infographic", "visualize", "HTML visual", "make a graphic", "visual summary" | `infographic` | User wants a self-contained HTML infographic from the content |
+| "roleplay", "practice one side of this conversation", "two-person script", "rehearse turn-taking" | `roleplay` | User wants a two-sided dialogue practice script |
+| "travel guide", "how do they get around", "what do I need to know about this place" | `travel-guide` | User wants practical travel logistics from a vlog transcript |
+| "document this course", "course notes", "follow-along guide", "course cheatsheet", "reference doc from this tutorial" | `course-docs` | User wants engineering-quality reference docs from a course transcript |
+| "help me practice English", "turn this into speaking practice", "give me sentences to repeat", "what can I say from this video" | `passive-to-active-english` | User wants a curated spoken-English practice corpus (verbatim lines + Recap + phrase list) |
 
-Pass the full file content to the agent in the prompt. The agent writes its own output file — derive the output path from the input filename using the suffix conventions: `-summary.md`, `-speaking.md`, `-organized.md`.
+Pass the full file content to the agent in the prompt. The agent writes its own output file — derive the output path from the input filename using the suffix conventions: `-summary.md`, `-speaking.md`, `-organized.md`, `-roleplay.md`, `-travel-guide.md`, `-infographic.html`, `-course-docs.md`, `-speaking-practice.md`.
 
 ## Web UI
 
-`webui/server.py` — a local web UI over all six agents. Drop or pick a transcript (`.txt` / `.srt` / `.md` / `.vtt`), choose an agent and a model, and run. Output is saved to `~/Desktop`.
+`webui/server.py` — a local web UI over all eight agents. Drop or pick a transcript (`.txt` / `.srt` / `.md` / `.vtt`), choose an agent and a model, and run. Output is saved to `~/Desktop`.
 
 ```bash
 python3 webui/server.py   # then open http://127.0.0.1:8765
@@ -114,4 +118,3 @@ lsof -ti tcp:8765 | xargs kill -9 && python3 webui/server.py
 | Python 3.10+ | Everything |
 | `claude` CLI (logged in) | LLM engine (default). Install: `npm install -g @anthropic-ai/claude-code` |
 | `yt-dlp` | Downloading transcripts (`brew install yt-dlp`) |
-| `PyYAML` | `generate_course_docs.py` pattern file (optional — falls back to built-ins) |
