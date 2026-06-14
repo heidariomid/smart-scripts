@@ -86,6 +86,27 @@ Three dedicated subagents live in `.claude/agents/`. When the user references a 
 
 Pass the full file content to the agent in the prompt. The agent writes its own output file — derive the output path from the input filename using the suffix conventions: `-summary.md`, `-speaking.md`, `-organized.md`.
 
+## Web UI
+
+`webui/server.py` — a local web UI over all six agents. Drop or pick a transcript (`.txt` / `.srt` / `.md` / `.vtt`), choose an agent and a model, and run. Output is saved to `~/Desktop`.
+
+```bash
+python3 webui/server.py   # then open http://127.0.0.1:8765
+```
+
+After editing `server.py`, restart the server — Python keeps the old code in memory:
+```bash
+lsof -ti tcp:8765 | xargs kill -9 && python3 webui/server.py
+```
+
+**Model selection:** The `model:` field in each agent's frontmatter (e.g. `model: sonnet` in `infographic.md`) is **only used when the agent is invoked inside Claude Code**. The web UI ignores it entirely — the model dropdown passes `--model <alias>` directly to `claude -p`, so whatever you select in the UI is what runs. The frontmatter default has no effect on web UI runs.
+
+**How it works:**
+- Prompts are loaded verbatim from `.claude/agents/<mode>.md` — no prompt duplication.
+- The server strips "write the file yourself" instructions from prompts and runs with `--tools ""` + `--disallowedTools Write Edit Bash`, so the model returns text on stdout; the server saves it. No permission prompts.
+- `.vtt` / `.srt` timestamps and cue numbers are stripped before the text reaches the model.
+- Accepts `.txt`, `.srt`, `.md`, `.vtt`. Outputs use the same suffix conventions as `smart_transcript.py`.
+
 ## Dependencies
 
 | Dependency | Required for |
