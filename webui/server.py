@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Local web UI for running the transcript agents.
 
-Paste an absolute path (a single transcript file OR a folder to recurse), pick
-an agent and a model, and the selected agent's prompt is run through `claude -p`.
-Output is written **beside the source file**, on whatever drive it lives on,
-using the same suffix conventions as smart_transcript.py.
+Drop or pick a transcript file, choose an agent and a model, and the selected
+agent's prompt is run through `claude -p`. The output is saved to your Desktop
+(alongside a copy of the input) and shown in the browser to download.
 
 Pure standard library — no third-party dependencies. Run with:
 
@@ -34,6 +33,7 @@ HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parent
 AGENTS_DIR = REPO_ROOT / ".claude" / "agents"
 INDEX_HTML = HERE / "index.html"
+OUTPUT_DIR = Path.home() / "Desktop"  # where inputs + outputs are saved
 
 # Transcript file types we read.
 SOURCE_EXTS = {".txt", ".srt", ".md", ".vtt"}
@@ -48,12 +48,9 @@ MODE_SUFFIX = {
     "infographic": "-infographic.html",
 }
 
-# Suffixes a folder scan must skip so re-running a folder never re-ingests its
-# own outputs (mirrors the --source-glob pitfall in CLAUDE.md).
-OUTPUT_SUFFIXES = set(MODE_SUFFIX.values()) | {"-formatted.md"}
-
-# Model aliases offered in the UI. Aliases are accepted by `claude --model`.
-# Kept here as a fallback / display map; the live list is fetched dynamically.
+# Model aliases offered in the UI. Aliases are accepted by `claude --model` and
+# always resolve to the latest model in each tier, so they stay correct as the
+# CLI updates.
 MODELS = [
     {"alias": "opus", "label": "Opus 4.8 (most capable)"},
     {"alias": "sonnet", "label": "Sonnet 4.6 (balanced)"},
@@ -94,17 +91,6 @@ def list_modes() -> list[dict]:
     return modes
 
 
-def list_models() -> list[dict]:
-    """Return selectable models.
-
-    Tries to keep in sync with the installed claude CLI by asking it for the
-    models it accepts; falls back to the static MODELS list otherwise. The
-    three current aliases (opus/sonnet/haiku) always resolve to the latest of
-    each tier, so they stay correct across CLI updates.
-    """
-    return MODELS
-
-
 def load_prompt(mode: str) -> str:
     """Load the agent prompt body for `mode` from its .md file."""
     path = AGENTS_DIR / f"{mode}.md"
@@ -125,13 +111,10 @@ _SRT_TS = re.compile(r"^\d{2}:\d{2}:\d{2},\d{3}\s*-->")
 _TAG = re.compile(r"</?[cviub][^>]*>|<\d{2}:\d{2}:\d{2}\.\d{3}>")
 
 
-def read_transcript(path: Path) -> str:
-    """Read a transcript, stripping WebVTT/SRT timing cruft so the LLM sees clean text."""
-    raw = path.read_text(encoding="utf-8", errors="replace")
-    ext = path.suffix.lower()
+def clean_transcript(raw: str, ext: str) -> str:
+    """Strip WebVTT/SRT timing cruft so the LLM sees clean text."""
     if ext not in (".vtt", ".srt"):
         return raw
-
     lines_out: list[str] = []
     for line in raw.splitlines():
         s = line.strip()
@@ -156,10 +139,9 @@ def read_transcript(path: Path) -> str:
 
 # Some agent prompts (e.g. infographic) tell the model to WRITE its output to a
 # file with the Write tool. That is wrong here: this server captures stdout and
-# writes the file itself, beside the source. Rather than *contradict* the prompt
-# with an override (which the model can read as prompt injection and refuse), we
-# strip the file-writing lines out and let the prompt simply ask for the result.
-# Lines that instruct writing to a file / using the Write tool:
+# writes the file itself. Rather than *contradict* the prompt with an override
+# (which the model can read as prompt injection and refuse), we strip the
+# file-writing lines out and let the prompt simply ask for the result.
 _WRITE_LINE_RE = re.compile(
     r"(?im)^.*(?:write (?:it|the file|the html|directly)|with the write tool|"
     r"write the file to the path|then confirm the path).*$\n?"
@@ -167,11 +149,7 @@ _WRITE_LINE_RE = re.compile(
 
 
 def sanitize_prompt(prompt: str) -> str:
-    """Remove 'write the file yourself' instructions so the model returns text.
-
-    We delete the offending lines instead of appending a contradicting override,
-    so nothing in the prompt looks like an injected instruction to refuse.
-    """
+    """Remove 'write the file yourself' instructions so the model returns text."""
     cleaned = _WRITE_LINE_RE.sub("", prompt)
     return cleaned.rstrip() + (
         "\n\nReturn the complete result as plain text in your reply. "
@@ -187,7 +165,7 @@ def run_claude(text: str, prompt: str, model: str | None = None,
     # No tools => the model cannot write files (no permission prompts) and must
     # return the result on stdout. --tools "" disables tools; --disallowedTools
     # additionally denies the write-capable ones so the model reports cleanly
-    # ("Write tool not enabled") instead of emitting stray function-call text.
+    # instead of emitting stray function-call text.
     cmd = ["claude", "-p", sanitize_prompt(prompt),
            "--output-format", "text",
            "--tools", "",
@@ -217,88 +195,48 @@ def run_claude(text: str, prompt: str, model: str | None = None,
     return doc
 
 
-def output_path_for(input_path: Path, mode: str) -> Path:
-    """Derive the output path **beside the source file** from its name + mode."""
+def output_name_for(input_name: str, mode: str) -> str:
+    """Derive the output filename from the input name + mode."""
+    stem = Path(input_name).stem
     suffix = MODE_SUFFIX.get(mode, f"-{mode}.md")
-    if mode == "organize" and input_path.suffix.lower() == ".md":
+    if mode == "organize" and Path(input_name).suffix.lower() == ".md":
         suffix = "-formatted.md"
-    return input_path.with_name(f"{input_path.stem}{suffix}")
-
-
-def is_output_file(path: Path) -> bool:
-    name = path.name
-    return any(name.endswith(suf) for suf in OUTPUT_SUFFIXES)
-
-
-def discover_sources(folder: Path) -> list[Path]:
-    """Recursively find transcript files under `folder`, skipping prior outputs."""
-    found = []
-    for p in sorted(folder.rglob("*")):
-        if not p.is_file():
-            continue
-        if p.suffix.lower() not in SOURCE_EXTS:
-            continue
-        if is_output_file(p):
-            continue
-        found.append(p)
-    return found
-
-
-def process_one(src: Path, mode: str, prompt: str, model: str | None) -> dict:
-    """Process a single source file; write output beside it. Returns a result dict."""
-    try:
-        text = read_transcript(src)
-        if len(text.strip()) < 5:
-            raise RuntimeError("source file is empty or unreadable")
-        result = run_claude(text, prompt, model=model)
-        out_path = output_path_for(src, mode)
-        out_path.write_text(result, encoding="utf-8")
-        return {
-            "ok": True,
-            "source": str(src),
-            "outputPath": str(out_path),
-            "isHtml": out_path.suffix.lower() == ".html",
-            "content": result,
-        }
-    except Exception as exc:  # noqa: BLE001
-        return {"ok": False, "source": str(src), "error": str(exc)}
+    return f"{stem}{suffix}"
 
 
 # ---------------------------------------------------------------------------
-# Resolve a dropped file to its real on-disk path (macOS Spotlight)
+# Minimal multipart/form-data parser (stdlib only; `cgi` is gone in 3.13)
 # ---------------------------------------------------------------------------
 
-def resolve_paths(filename: str, size: int | None) -> list[str]:
-    """Find absolute paths for `filename` on this machine via Spotlight.
+def parse_multipart(body: bytes, content_type: str) -> dict:
+    """Parse a multipart/form-data body into {field: value}.
 
-    Browsers don't expose a dropped file's path, but since this server runs on
-    the same machine we can look it up. When `size` is given, matches are
-    filtered to files of exactly that byte size so the right one is pinned even
-    when the name is not unique.
+    Text fields decode to str; the uploaded file maps to a dict
+    {filename, content (bytes)}. Good enough for this tiny single-file form.
     """
-    if shutil.which("mdfind") is None:
-        return []
-    name = Path(filename).name
-    try:
-        out = subprocess.run(
-            ["mdfind", "-name", name],
-            capture_output=True, text=True, timeout=15,
-        )
-    except subprocess.SubprocessError:
-        return []
-    candidates = []
-    for line in out.stdout.splitlines():
-        p = Path(line.strip())
-        if p.name != name or not p.is_file():
+    m = re.search(r"boundary=([^;]+)", content_type)
+    if not m:
+        raise RuntimeError("missing multipart boundary")
+    boundary = b"--" + m.group(1).strip().strip('"').encode()
+    fields: dict = {}
+    for part in body.split(boundary):
+        if not part or part in (b"--\r\n", b"--"):
             continue
-        if size is not None:
-            try:
-                if p.stat().st_size != size:
-                    continue
-            except OSError:
-                continue
-        candidates.append(str(p))
-    return candidates
+        part = part.strip(b"\r\n")
+        if b"\r\n\r\n" not in part:
+            continue
+        header_blob, _, data = part.partition(b"\r\n\r\n")
+        headers = header_blob.decode("utf-8", "replace")
+        name_m = re.search(r'name="([^"]+)"', headers)
+        if not name_m:
+            continue
+        name = name_m.group(1)
+        file_m = re.search(r'filename="([^"]*)"', headers)
+        if file_m:
+            fields[name] = {"filename": file_m.group(1), "content": data}
+        else:
+            fields[name] = data.decode("utf-8", "replace").strip()
+    return fields
 
 
 # ---------------------------------------------------------------------------
@@ -316,12 +254,6 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
-
-    def _read_json_body(self) -> dict:
-        length = int(self.headers.get("Content-Length", 0))
-        if not length:
-            return {}
-        return json.loads(self.rfile.read(length).decode("utf-8"))
 
     def do_GET(self):
         if self.path in ("/", "/index.html"):
@@ -341,8 +273,9 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 self._send_json({
                     "modes": list_modes(),
-                    "models": list_models(),
+                    "models": MODELS,
                     "sourceExts": sorted(SOURCE_EXTS),
+                    "outputDir": str(OUTPUT_DIR),
                 })
             except Exception as exc:  # noqa: BLE001
                 self._send_json({"error": str(exc)}, 500)
@@ -351,70 +284,57 @@ class Handler(BaseHTTPRequestHandler):
         self._send_json({"error": "not found"}, 404)
 
     def do_POST(self):
-        if self.path == "/api/resolve":
-            try:
-                data = self._read_json_body()
-                name = (data.get("filename") or "").strip()
-                size = data.get("size")
-                size = int(size) if isinstance(size, (int, float, str)) and str(size).isdigit() else None
-                if not name:
-                    self._send_json({"error": "no filename"}, 400)
-                    return
-                self._send_json({"paths": resolve_paths(name, size)})
-            except Exception as exc:  # noqa: BLE001
-                self._send_json({"error": str(exc)}, 500)
-            return
-
         if self.path != "/api/process":
             self._send_json({"error": "not found"}, 404)
             return
         try:
-            data = self._read_json_body()
-            mode = (data.get("mode") or "").strip()
-            model = (data.get("model") or "").strip() or None
-            raw_path = (data.get("path") or "").strip()
+            length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(length) if length else b""
+            fields = parse_multipart(body, self.headers.get("Content-Type", ""))
+
+            mode = (fields.get("mode") or "").strip()
+            model = (fields.get("model") or "").strip() or None
+            file_part = fields.get("file")
 
             if mode not in MODE_SUFFIX:
                 self._send_json({"error": f"unknown mode: {mode!r}"}, 400)
                 return
-            if not raw_path:
-                self._send_json({"error": "no path provided"}, 400)
+            if not isinstance(file_part, dict) or not file_part.get("filename"):
+                self._send_json({"error": "no file uploaded"}, 400)
                 return
 
-            target = Path(raw_path).expanduser()
-            if not target.exists():
-                self._send_json({"error": f"path does not exist: {target}"}, 400)
-                return
-
-            prompt = load_prompt(mode)
-
-            if target.is_dir():
-                sources = discover_sources(target)
-                if not sources:
-                    self._send_json({
-                        "ok": True, "mode": mode, "isFolder": True,
-                        "results": [],
-                        "message": f"no transcript files ({', '.join(sorted(SOURCE_EXTS))}) found under {target}",
-                    })
-                    return
-                results = [process_one(s, mode, prompt, model) for s in sources]
-                self._send_json({
-                    "ok": all(r["ok"] for r in results),
-                    "mode": mode, "model": model, "isFolder": True,
-                    "results": results,
-                })
-                return
-
-            if target.suffix.lower() not in SOURCE_EXTS:
+            filename = Path(file_part["filename"]).name
+            ext = Path(filename).suffix.lower()
+            if ext not in SOURCE_EXTS:
                 self._send_json(
-                    {"error": f"unsupported file type {target.suffix!r}; "
+                    {"error": f"unsupported file type {ext!r}; "
                               f"expected one of {', '.join(sorted(SOURCE_EXTS))}"}, 400)
                 return
 
-            res = process_one(target, mode, prompt, model)
-            status = 200 if res["ok"] else 500
-            self._send_json({**res, "mode": mode, "model": model, "isFolder": False},
-                            status)
+            raw = file_part["content"].decode("utf-8", "replace")
+            text = clean_transcript(raw, ext)
+            if len(text.strip()) < 5:
+                self._send_json({"error": "file is empty or unreadable"}, 400)
+                return
+
+            OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+            # Save a copy of the input next to the output.
+            (OUTPUT_DIR / filename).write_text(raw, encoding="utf-8")
+
+            prompt = load_prompt(mode)
+            result = run_claude(text, prompt, model=model)
+
+            out_path = OUTPUT_DIR / output_name_for(filename, mode)
+            out_path.write_text(result, encoding="utf-8")
+
+            self._send_json({
+                "ok": True,
+                "mode": mode,
+                "model": model,
+                "outputPath": str(out_path),
+                "isHtml": out_path.suffix.lower() == ".html",
+                "content": result,
+            })
         except Exception as exc:  # noqa: BLE001
             self._send_json({"ok": False, "error": str(exc)}, 500)
 
@@ -425,7 +345,7 @@ def main():
     server = ThreadingHTTPServer((HOST, PORT), Handler)
     url = f"http://{HOST}:{PORT}"
     print(f"[webui] serving transcript agents at {url}")
-    print("[webui] paste a file or folder path; output is saved beside each source file")
+    print(f"[webui] outputs are saved to {OUTPUT_DIR}")
     print("[webui] press Ctrl-C to stop")
     try:
         server.serve_forever()

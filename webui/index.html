@@ -19,17 +19,17 @@
   .sub { color: var(--muted); margin: 0 0 24px; }
   .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
   #drop {
-    border: 2px dashed var(--border); border-radius: 12px; padding: 22px; text-align: center;
+    border: 2px dashed var(--border); border-radius: 12px; padding: 28px; text-align: center;
     color: var(--muted); transition: .15s; user-select: none; cursor: pointer;
   }
   #drop.over { border-color: var(--accent); color: var(--fg); background: rgba(124,156,255,.06); }
   #drop strong { color: var(--fg); }
+  .file { margin-top: 10px; color: var(--fg); font-size: 14px; }
   label { display: block; font-size: 13px; color: var(--muted); margin: 16px 0 6px; }
-  input[type=text], select, button {
+  select, button {
     font: inherit; color: var(--fg); background: #20242d; border: 1px solid var(--border);
     border-radius: 8px; padding: 10px 12px; width: 100%;
   }
-  input[type=text] { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
   .row { display: flex; gap: 12px; }
   .row > div { flex: 1; }
   .desc { color: var(--muted); font-size: 13px; min-height: 18px; margin-top: 6px; }
@@ -41,18 +41,15 @@
   .status { margin-top: 14px; font-size: 14px; min-height: 20px; }
   .status.ok { color: var(--ok); }
   .status.err { color: var(--err); }
-  .results { display: none; }
-  .item { border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
-  .item h3 { font-size: 13px; margin: 0 0 8px; font-family: ui-monospace, Menlo, monospace; word-break: break-all; }
-  .item.bad h3 { color: var(--err); }
-  .actions { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .result { display: none; }
+  .result h2 { font-size: 14px; margin: 0 0 8px; font-family: ui-monospace, Menlo, monospace; word-break: break-all; }
+  .actions { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
   .actions a { text-decoration: none; }
-  .actions a button { width: auto; padding: 7px 13px; }
+  .actions a button { width: auto; padding: 8px 14px; }
   pre {
-    background: #0b0e14; border: 1px solid var(--border); border-radius: 8px; padding: 12px;
-    overflow: auto; max-height: 360px; white-space: pre-wrap; word-break: break-word; font-size: 13px; margin: 0;
+    background: #0b0e14; border: 1px solid var(--border); border-radius: 8px; padding: 14px;
+    overflow: auto; max-height: 460px; white-space: pre-wrap; word-break: break-word; font-size: 13px; margin: 0;
   }
-  .err-msg { color: var(--err); font-size: 13px; }
   .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--muted);
     border-top-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -2px; margin-right: 6px; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -61,17 +58,15 @@
 <body>
 <div class="wrap">
   <h1>Transcript Agents</h1>
-  <p class="sub">Paste an absolute path to a transcript file <em>or</em> a folder. Output is saved beside each source file — any drive.</p>
+  <p class="sub">Drop or pick a transcript, choose an agent, and run. Output is saved to your Desktop and shown below to download.</p>
 
   <div class="panel">
     <div id="drop">
-      <strong>Drop a file here, or click to choose</strong> — its path is found and filled in automatically
+      <strong>Drop a file here, or click to choose</strong>
       <span id="exts" style="display:block;font-size:13px;margin-top:4px"></span>
+      <div class="file" id="fileName"></div>
     </div>
     <input type="file" id="fileInput" hidden>
-
-    <label for="path">File or folder path</label>
-    <input type="text" id="path" placeholder="/Volumes/Drive/videos/sub.vtt  or  /Volumes/Drive/videos/" spellcheck="false" autocomplete="off">
 
     <div class="row">
       <div>
@@ -89,62 +84,34 @@
     <div class="status" id="status"></div>
   </div>
 
-  <div class="panel results" id="results">
-    <div id="resultsList"></div>
+  <div class="panel result" id="result">
+    <h2 id="resultTitle"></h2>
+    <div class="actions" id="actions"></div>
+    <pre id="output"></pre>
   </div>
 </div>
 
 <script>
 const $ = (id) => document.getElementById(id);
-let modes = [], models = [];
+let modes = [], models = [], selectedFile = null;
 
-const drop = $("drop"), pathInput = $("path"), modeSel = $("mode"), modelSel = $("model");
-const modeDesc = $("modeDesc"), runBtn = $("runBtn"), statusEl = $("status");
-const results = $("results"), resultsList = $("resultsList"), fileInput = $("fileInput");
+const drop = $("drop"), fileInput = $("fileInput"), fileName = $("fileName");
+const modeSel = $("mode"), modelSel = $("model"), modeDesc = $("modeDesc");
+const runBtn = $("runBtn"), statusEl = $("status");
+const result = $("result"), output = $("output"), actions = $("actions");
 
-function updateRun() { runBtn.disabled = !(pathInput.value.trim() && modeSel.value); }
-pathInput.addEventListener("input", updateRun);
-
-// Resolve a chosen/dropped file to its real path. Browsers hide the path, so
-// we ask the server to locate it by name+size (Spotlight, same machine).
-async function handleFile(f) {
-  if (!f) return;
-  if (f.path) { pathInput.value = f.path; updateRun(); return; }  // Electron etc.
-  statusEl.className = "status";
-  statusEl.innerHTML = '<span class="spinner"></span>Locating ' + f.name + '…';
-  try {
-    const res = await fetch("/api/resolve", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ filename: f.name, size: f.size }),
-    });
-    const data = await res.json();
-    const paths = data.paths || [];
-    if (paths.length === 1) {
-      pathInput.value = paths[0]; updateRun();
-      statusEl.className = "status ok"; statusEl.textContent = "Found: " + paths[0];
-    } else if (paths.length > 1) {
-      pathInput.value = paths[0]; updateRun();
-      statusEl.className = "status";
-      statusEl.textContent = paths.length + " files named " + f.name + " — using the first, edit if wrong: " + paths.join("  |  ");
-    } else {
-      statusEl.className = "status err";
-      statusEl.textContent = "Couldn't locate " + f.name + " on disk — paste its absolute path.";
-      pathInput.focus();
-    }
-  } catch (err) {
-    statusEl.className = "status err";
-    statusEl.textContent = "Lookup failed: " + err.message + " — paste the path.";
-  }
+function setFile(f) {
+  selectedFile = f;
+  fileName.textContent = f ? "Selected: " + f.name : "";
+  updateRun();
 }
+function updateRun() { runBtn.disabled = !(selectedFile && modeSel.value); }
 
-// Click the drop zone to open a file picker.
 drop.addEventListener("click", () => fileInput.click());
-fileInput.addEventListener("change", () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
-
-// Drag-and-drop.
+fileInput.addEventListener("change", () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
 ["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
 ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
-drop.addEventListener("drop", e => { handleFile(e.dataTransfer.files[0]); });
+drop.addEventListener("drop", e => { if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); });
 
 modeSel.addEventListener("change", () => {
   const m = modes.find(x => x.name === modeSel.value);
@@ -177,63 +144,41 @@ async function loadConfig() {
   }
 }
 
-function renderItem(r) {
-  const div = document.createElement("div");
-  div.className = "item" + (r.ok ? "" : " bad");
-  const h = document.createElement("h3");
-  h.textContent = (r.ok ? "✓ " : "✗ ") + (r.outputPath || r.source);
-  div.appendChild(h);
-  if (r.ok) {
-    const actions = document.createElement("div");
-    actions.className = "actions";
-    const blob = new Blob([r.content], { type: r.isHtml ? "text/html" : "text/markdown" });
+runBtn.addEventListener("click", async () => {
+  if (!selectedFile || !modeSel.value) return;
+  runBtn.disabled = true;
+  result.style.display = "none";
+  statusEl.className = "status";
+  statusEl.innerHTML = '<span class="spinner"></span>Running ' + modeSel.value + '… (can take a minute or two)';
+
+  const fd = new FormData();
+  fd.append("mode", modeSel.value);
+  fd.append("model", modelSel.value);
+  fd.append("file", selectedFile);
+
+  try {
+    const res = await fetch("/api/process", { method: "POST", body: fd });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || ("HTTP " + res.status));
+
+    statusEl.className = "status ok";
+    statusEl.textContent = "Saved to " + data.outputPath;
+
+    $("resultTitle").textContent = data.outputPath;
+    output.textContent = data.content;
+
+    actions.innerHTML = "";
+    const blob = new Blob([data.content], { type: data.isHtml ? "text/html" : "text/markdown" });
     const url = URL.createObjectURL(blob);
     const dl = document.createElement("a");
-    dl.href = url; dl.download = r.outputPath.split("/").pop();
+    dl.href = url; dl.download = data.outputPath.split("/").pop();
     dl.innerHTML = "<button>Download</button>"; actions.appendChild(dl);
-    if (r.isHtml) {
+    if (data.isHtml) {
       const op = document.createElement("a");
       op.href = url; op.target = "_blank";
       op.innerHTML = "<button>Open in new tab</button>"; actions.appendChild(op);
     }
-    div.appendChild(actions);
-    const pre = document.createElement("pre");
-    pre.textContent = r.content; div.appendChild(pre);
-  } else {
-    const e = document.createElement("div");
-    e.className = "err-msg"; e.textContent = r.error || "failed";
-    div.appendChild(e);
-  }
-  return div;
-}
-
-runBtn.addEventListener("click", async () => {
-  const path = pathInput.value.trim();
-  if (!path || !modeSel.value) return;
-  runBtn.disabled = true;
-  results.style.display = "none"; resultsList.innerHTML = "";
-  statusEl.className = "status";
-  statusEl.innerHTML = '<span class="spinner"></span>Running ' + modeSel.value + '… (a folder runs each file in sequence — may take a while)';
-
-  try {
-    const res = await fetch("/api/process", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path, mode: modeSel.value, model: modelSel.value }),
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-
-    const items = data.isFolder ? (data.results || []) : [data];
-    if (data.isFolder && items.length === 0) {
-      statusEl.className = "status"; statusEl.textContent = data.message || "Nothing to process.";
-      return;
-    }
-    const okCount = items.filter(r => r.ok).length;
-    statusEl.className = "status " + (okCount === items.length ? "ok" : "err");
-    statusEl.textContent = `Done — ${okCount}/${items.length} succeeded.`;
-    for (const r of items) resultsList.appendChild(renderItem(r));
-    results.style.display = "block";
+    result.style.display = "block";
   } catch (e) {
     statusEl.className = "status err";
     statusEl.textContent = "Error: " + e.message;
