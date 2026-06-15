@@ -52,20 +52,20 @@ The script has two engines and two modes:
 1. `organize_with_llm()` — shells out to `claude -p <PROMPT> --output-format text`, pipes `<text>…</text>` on stdin.
 2. `organize_passthrough()` — pure-stdlib offline formatter: detects unstructured prose via `_looks_unstructured()`, calls `restructure_prose()` to split into paragraphs + promote headings, then runs normalisation passes (bullets, blank lines, bare command backticks). **Word-preserving** — only whitespace and `#` markers are added.
 
-**Mode wiring** — a new mode requires touching **5 places** in the script (documented in `SMART_TRANSCRIPT-NOTES.md §4`):
+**Mode wiring** — a new mode requires touching **5 places** in the script:
 1. A `*_PROMPT` constant at the top
 2. Prompt selection in `process_file()`
 3. LLM-required guard in `process_file()`
 4. `--mode choices` in `argparse`
 5. Output suffix defaults
 
-Before adding many modes, refactor to the `MODES = {...}` registry described in `SMART_TRANSCRIPT-NOTES.md §8`.
+Before adding many modes, refactor to a `MODES = {...}` registry dict to reduce these 5 touch-points to 1.
 
 ## Critical sync requirements
 
 **Two file copies:** The canonical script is `~/bin/smart_transcript.py`. The project-folder copy can drift. After any edit, sync: `cp ~/bin/smart_transcript.py ./smart_transcript.py` (or reverse).
 
-**Spec duplication:** `SPEAKING_PROMPT` in the script and the `passive-to-active-english` skill (`SKILL.md`) both define the speaking mode spec. **Both must be edited together** — nothing enforces this.
+**Spec duplication:** `SPEAKING_PROMPT` in the script and the `speaking` agent (`.claude/agents/speaking.md`) both define the speaking mode spec. **Both must be edited together** — nothing enforces this.
 
 ## Common pitfalls
 
@@ -75,7 +75,7 @@ Before adding many modes, refactor to the `MODES = {...}` registry described in 
 
 ## Agent routing — automatic dispatch
 
-Eight dedicated subagents live in `.claude/agents/`. When the user references a transcript or text file and asks for one of the modes below, **always invoke the matching agent automatically** — do not ask the user to specify it.
+Nine dedicated subagents live in `.claude/agents/`. When the user references a transcript or text file and asks for one of the modes below, **always invoke the matching agent automatically** — do not ask the user to specify it.
 
 | Trigger | Agent | When to fire |
 | --- | --- | --- |
@@ -87,8 +87,9 @@ Eight dedicated subagents live in `.claude/agents/`. When the user references a 
 | "travel guide", "how do they get around", "what do I need to know about this place" | `travel-guide` | User wants practical travel logistics from a vlog transcript |
 | "document this course", "course notes", "follow-along guide", "course cheatsheet", "reference doc from this tutorial" | `course-docs` | User wants engineering-quality reference docs from a course transcript |
 | "help me practice English", "turn this into speaking practice", "give me sentences to repeat", "what can I say from this video", "tense practice", "practice tenses with this" | `passive-to-active-english` | User wants tense drilling + phrase practice: scene Recaps (3rd-person) → same events in 4 first-person tenses → Phrases Worth Reviewing + Fill-in-the-Blank with 3 variations each. No verbatim line extraction (use `speaking` for that). |
+| "debate prep", "argue this", "for and against", "practice arguing", "defend a position", "steelman" | `debate-prep` | User wants structured For/Against/Nuanced argument positions from a news, opinion, or tech video |
 
-Pass the full file content to the agent in the prompt. The agent writes its own output file — derive the output path from the input filename using the suffix conventions: `-summary.md`, `-speaking.md`, `-organized.md`, `-roleplay.md`, `-travel-guide.md`, `-infographic.html`, `-course-docs.md`, `-speaking-practice.md`.
+Pass the full file content to the agent in the prompt. The agent writes its own output file — derive the output path from the input filename using the suffix conventions: `-summary.md`, `-speaking.md`, `-organized.md`, `-roleplay.md`, `-travel-guide.md`, `-infographic.html`, `-course-docs.md`, `-speaking-practice.md`, `-debate-prep.md`.
 
 ## Web UI
 
@@ -117,4 +118,3 @@ lsof -ti tcp:8765 | xargs kill -9 && python3 webui/server.py
 | --- | --- |
 | Python 3.10+ | Everything |
 | `claude` CLI (logged in) | LLM engine (default). Install: `npm install -g @anthropic-ai/claude-code` |
-| `yt-dlp` | Downloading transcripts (`brew install yt-dlp`) |
