@@ -201,18 +201,25 @@ def output_name_for(input_name: str, mode: str) -> str:
     """Derive the output filename from the input name + mode."""
     stem = Path(input_name).stem
     # Strip any previously appended mode suffix so re-processing an output
-    # file doesn't accumulate prefixes (e.g. "foo-organized-speaking-practice").
+    # file doesn't accumulate suffixes (e.g. "foo-speaking-roleplay").
     known_suffixes = [
         "-organized", "-formatted", "-speaking", "-summary", "-roleplay",
         "-travel-guide", "-infographic", "-course-docs", "-speaking-practice",
     ]
+    # Also handle bare mode-word stems (e.g. input file named "organized.md")
+    bare_mode_words = {s.lstrip("-") for s in known_suffixes}
     for s in known_suffixes:
         if stem.endswith(s):
             stem = stem[: -len(s)]
             break
+    # If the entire stem is a bare mode word with no base, drop the stem entirely
+    if stem in bare_mode_words or stem == "":
+        stem = ""
     suffix = MODE_SUFFIX.get(mode, f"-{mode}.md")
     if mode == "organize" and Path(input_name).suffix.lower() == ".md":
-        suffix = "-formatted.md"
+        suffix = "-organized.md"
+    if stem == "":
+        suffix = suffix.lstrip("-")
     return f"{stem}{suffix}"
 
 
