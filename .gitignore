@@ -1,1 +1,5 @@
 sub.txt
+
+# Python build/cache junk
+__pycache__/
+*.pyc
