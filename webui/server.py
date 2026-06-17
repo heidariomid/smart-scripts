@@ -50,6 +50,17 @@ MODE_SUFFIX = {
     "passive-to-active-english": "-speaking-practice.md",
 }
 
+# Most agents run with NO tools (the model returns text on stdout; the server
+# writes the file). A few agents' prompts genuinely call for read-only web
+# access — e.g. travel-guide tells the model to web-search and verify places
+# before stating them, and to build real map links. For those, allow ONLY the
+# read-only web tools. Write/Edit/Bash stay denied via --disallowedTools, so
+# this never reintroduces file-write or permission-prompt risk.
+# mode -> space/comma-separated tool list for `claude --tools`. Absent => "" (no tools).
+MODE_TOOLS = {
+    "travel-guide": "WebSearch,WebFetch",
+}
+
 # Model aliases offered in the UI. Aliases are accepted by `claude --model` and
 # always resolve to the latest model in each tier, so they stay correct as the
 # CLI updates.
@@ -184,17 +195,18 @@ def sanitize_prompt(prompt: str, extra: str | None = None) -> str:
 
 def run_claude(text: str, prompt: str, model: str | None = None,
                effort: str | None = None, timeout: int = LLM_TIMEOUT,
-               extra: str | None = None) -> str:
+               extra: str | None = None, tools: str = "") -> str:
     if shutil.which("claude") is None:
         raise RuntimeError("claude CLI not found on PATH — install it and log in")
 
-    # No tools => the model cannot write files (no permission prompts) and must
-    # return the result on stdout. --tools "" disables tools; --disallowedTools
-    # additionally denies the write-capable ones so the model reports cleanly
-    # instead of emitting stray function-call text.
+    # By default, no tools => the model cannot write files (no permission
+    # prompts) and must return the result on stdout. `tools` may name read-only
+    # tools to allow (e.g. "WebSearch,WebFetch" for travel-guide). --disallowedTools
+    # always denies the write-capable ones, so even with web tools enabled the
+    # model can't write files or run shell — it still reports on stdout.
     cmd = ["claude", "-p", sanitize_prompt(prompt, extra),
            "--output-format", "text",
-           "--tools", "",
+           "--tools", tools,
            "--disallowedTools", "Write", "Edit", "NotebookEdit", "Bash"]
     if model:
         cmd += ["--model", model]
@@ -377,7 +389,9 @@ class Handler(BaseHTTPRequestHandler):
             (OUTPUT_DIR / filename).write_text(raw, encoding="utf-8")
 
             prompt = load_prompt(mode)
-            result = run_claude(text, prompt, model=model, effort=effort, extra=extra)
+            tools = MODE_TOOLS.get(mode, "")
+            result = run_claude(text, prompt, model=model, effort=effort,
+                                extra=extra, tools=tools)
 
             out_path = OUTPUT_DIR / output_name_for(filename, mode)
             out_path.write_text(result, encoding="utf-8")
