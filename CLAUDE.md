@@ -1,120 +1,73 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code (claude.ai/code) when working in this repository.
+
+> **Full picture:** [PROJECT-OVERVIEW.md](PROJECT-OVERVIEW.md) — architecture, web-UI internals, the
+> agent depth-standard, how to add a mode/agent, validation, and the cleanup backlog. Read it before
+> any non-trivial change. This file is the short list of must-follow rules.
 
 ## What this is
 
-`smart_transcript.py` — a single-file, multi-mode CLI that turns raw text or transcripts into Markdown. Selected with `--mode` (default `organize`):
+A toolkit that turns raw text / transcripts into Markdown (and one HTML) artifacts, three ways:
 
-- **`organize`** — faithful, word-preserving Markdown reformat. Has an offline regex fallback when the `claude` CLI is unavailable.
-- **`speaking`** — curates verbatim high-value spoken lines per scene, each followed by a generated 3rd-person **Recap** paragraph. **LLM-required** — no offline fallback; errors cleanly if `claude` is missing.
+- **`smart_transcript.py`** — single-file CLI, two runnable modes: `organize` (faithful word-preserving reformat, has an offline fallback) and `speaking` (verbatim spoken lines + generated **Recap** paragraphs; **LLM-required**, no fallback).
+- **`.claude/agents/*.md`** — nine Claude Code subagents (see routing table below).
+- **`webui/server.py`** — local browser UI that runs the agent prompts via the `claude` CLI.
 
-## Running the script
+> Three surfaces have **different counts**: CLI = **2 modes**; agents = **9**; web UI = **8** (debate-prep is missing from `MODE_SUFFIX` — see PROJECT-OVERVIEW.md). Don't conflate them.
+
+## Running
 
 ```bash
-# Single file, LLM engine (default)
+# CLI (LLM engine, default)
 python3 smart_transcript.py --input notes.txt --output out.md
+python3 smart_transcript.py --input notes.txt --output out.md --no-llm   # offline, organize only
+python3 smart_transcript.py --mode speaking --input sub.txt --output speaking.md   # ~90s, needs claude CLI
 
-# Offline only (organize mode only)
-python3 smart_transcript.py --input notes.txt --output out.md --no-llm
-
-# Speaking practice (needs claude CLI, ~90s)
-python3 smart_transcript.py --mode speaking --input sub.txt --output speaking.md
-
-# Batch (always add --source-glob "*.txt" in speaking mode to avoid re-processing outputs)
+# Batch — ALWAYS add --source-glob "*.txt" in speaking mode (see pitfalls)
 python3 smart_transcript.py --mode speaking --all . --source-glob "*.txt" --dry-run
-python3 smart_transcript.py --mode speaking --all . --source-glob "*.txt" --force
+
+# Web UI
+python3 webui/server.py   # http://127.0.0.1:8765 ; outputs save to ~/Desktop
 ```
 
-## Validation / smoke tests
-
-```bash
-# 1. Syntax (both copies)
-python3 -c "import ast; ast.parse(open('smart_transcript.py').read()); ast.parse(open('$HOME/bin/smart_transcript.py').read()); print('OK')"
-
-# 2. --no-llm guard errors cleanly, writes nothing
-python3 ~/bin/smart_transcript.py --mode speaking -i sub.txt -o /tmp/x.md --no-llm
-# expect: exit=1, /tmp/x.md not created
-
-# 3. --all path + glob resolves correctly (no writes)
-python3 ~/bin/smart_transcript.py --mode speaking --all . --source-glob "*.txt" --dry-run
-
-# 4. End-to-end with Recap check (~90-110s, needs claude CLI)
-python3 ~/bin/smart_transcript.py --mode speaking -i sub.txt -o /tmp/recap_test.md --llm-timeout 480
-grep -c "^### Recap" /tmp/recap_test.md   # should equal the scene count
-```
-
-## Architecture
-
-The script has two engines and two modes:
-
-**Engines** (tried in order, unless `--no-llm`):
-1. `organize_with_llm()` — shells out to `claude -p <PROMPT> --output-format text`, pipes `<text>…</text>` on stdin.
-2. `organize_passthrough()` — pure-stdlib offline formatter: detects unstructured prose via `_looks_unstructured()`, calls `restructure_prose()` to split into paragraphs + promote headings, then runs normalisation passes (bullets, blank lines, bare command backticks). **Word-preserving** — only whitespace and `#` markers are added.
-
-**Mode wiring** — a new mode requires touching **5 places** in the script:
-1. A `*_PROMPT` constant at the top
-2. Prompt selection in `process_file()`
-3. LLM-required guard in `process_file()`
-4. `--mode choices` in `argparse`
-5. Output suffix defaults
-
-Before adding many modes, refactor to a `MODES = {...}` registry dict to reduce these 5 touch-points to 1.
+Smoke tests and the full validation block are in [PROJECT-OVERVIEW.md](PROJECT-OVERVIEW.md).
 
 ## Critical sync requirements
 
-**Two file copies:** The canonical script is `~/bin/smart_transcript.py`. The project-folder copy can drift. After any edit, sync: `cp ~/bin/smart_transcript.py ./smart_transcript.py` (or reverse).
-
-**Spec duplication:** `SPEAKING_PROMPT` in the script and the `speaking` agent (`.claude/agents/speaking.md`) both define the speaking mode spec. **Both must be edited together** — nothing enforces this.
+- **Two script copies.** Canonical: `~/bin/smart_transcript.py`. The repo copy can drift. After any edit, sync both: `cp ~/bin/smart_transcript.py ./smart_transcript.py` (or reverse). The `~/bin` copy is outside git — commits don't carry it.
+- **Spec duplication.** `SPEAKING_PROMPT` in the script and `.claude/agents/speaking.md` both define the speaking spec. **Edit both together** — nothing enforces this.
+- After editing `webui/server.py`, **restart it** (Python caches the old code): `lsof -ti tcp:8765 | xargs kill -9 && python3 webui/server.py`.
+- After editing any agent prompt, run the **sanitizer self-check** (in PROJECT-OVERVIEW.md): keep any file-writing instruction on its own line and never let a content line match `_WRITE_LINE_RE`.
 
 ## Common pitfalls
 
-- `--all` batch in speaking mode with the default `--source-glob "*.txt,*.md"` will re-ingest its own `*-speaking.md` outputs. Always add `--source-glob "*.txt"`.
-- `--mode speaking --no-llm` is intentionally an error — do not add an offline fallback; regex cannot judge speaking value.
+- `--all` batch in speaking mode with the default `--source-glob "*.txt,*.md"` re-ingests its own `*-speaking.md` outputs. Always pass `--source-glob "*.txt"`.
+- `--mode speaking --no-llm` is intentionally an error — do **not** add an offline fallback; regex can't judge speaking value.
 - `argparse` "file modified since read" errors when iterating fast — re-Read before each Edit.
+- The web UI **ignores** each agent's `model:` frontmatter — the UI dropdown's `--model` is what runs. Frontmatter `model:` only applies inside Claude Code.
 
 ## Agent routing — automatic dispatch
 
-Nine dedicated subagents live in `.claude/agents/`. When the user references a transcript or text file and asks for one of the modes below, **always invoke the matching agent automatically** — do not ask the user to specify it.
+Nine subagents live in `.claude/agents/`. When the user references a transcript or text file and asks for one of these, **always invoke the matching agent automatically** — do not ask which one. Pass the full file content in the prompt; the agent writes its own output file using the suffix shown.
 
-| Trigger | Agent | When to fire |
+| Trigger | Agent | Output suffix |
 | --- | --- | --- |
-| "summarize", "what was it about", "give me a recap", "short summary" | `summary` | User wants the overall gist of a transcript |
-| "speaking practice", "lines to practice", "speaking mode", "practice English", "rehearsal" | `speaking` | User wants verbatim spoken lines + Recap paragraphs |
-| "organize", "format", "clean up", "make this Markdown", "reformat" | `organize` | User wants faithful Markdown reformat of raw text |
-| "infographic", "visualize", "HTML visual", "make a graphic", "visual summary" | `infographic` | User wants a self-contained HTML infographic from the content |
-| "roleplay", "practice one side of this conversation", "two-person script", "rehearse turn-taking" | `roleplay` | User wants a two-sided dialogue practice script |
-| "travel guide", "how do they get around", "what do I need to know about this place" | `travel-guide` | User wants practical travel logistics from a vlog transcript |
-| "document this course", "course notes", "follow-along guide", "course cheatsheet", "reference doc from this tutorial" | `course-docs` | User wants engineering-quality reference docs from a course transcript |
-| "help me practice English", "turn this into speaking practice", "give me sentences to repeat", "what can I say from this video", "tense practice", "practice tenses with this" | `passive-to-active-english` | User wants tense drilling + phrase practice: scene Recaps (3rd-person) → same events in 4 first-person tenses → Phrases Worth Reviewing + Fill-in-the-Blank with 3 variations each. No verbatim line extraction (use `speaking` for that). |
-| "debate prep", "argue this", "for and against", "practice arguing", "defend a position", "steelman" | `debate-prep` | User wants structured For/Against/Nuanced argument positions from a news, opinion, or tech video |
+| "summarize", "what was it about", "give me a recap", "short summary" | `summary` | `-summary.md` |
+| "speaking practice", "lines to practice", "speaking mode", "rehearsal" | `speaking` | `-speaking.md` |
+| "organize", "format", "clean up", "make this Markdown", "reformat" | `organize` | `-organized.md` |
+| "roleplay", "practice one side of this conversation", "two-person script", "rehearse turn-taking" | `roleplay` | `-roleplay.md` |
+| "travel guide", "how do they get around", "what do I need to know about this place" | `travel-guide` | `-travel-guide.md` |
+| "infographic", "visualize", "HTML visual", "make a graphic", "visual summary" | `infographic` | `-infographic.html` |
+| "document this course", "course notes", "follow-along guide", "course cheatsheet", "reference doc from this tutorial" | `course-docs` | `-course-docs.md` |
+| "help me practice English", "give me sentences to repeat", "what can I say from this video", "tense practice" | `passive-to-active-english` | `-speaking-practice.md` |
+| "debate prep", "argue this", "for and against", "practice arguing", "defend a position", "steelman" | `debate-prep` | `-debate-prep.md` |
 
-Pass the full file content to the agent in the prompt. The agent writes its own output file — derive the output path from the input filename using the suffix conventions: `-summary.md`, `-speaking.md`, `-organized.md`, `-roleplay.md`, `-travel-guide.md`, `-infographic.html`, `-course-docs.md`, `-speaking-practice.md`, `-debate-prep.md`.
-
-## Web UI
-
-`webui/server.py` — a local web UI over all eight agents. Drop or pick a transcript (`.txt` / `.srt` / `.md` / `.vtt`), choose an agent and a model, and run. Output is saved to `~/Desktop`.
-
-```bash
-python3 webui/server.py   # then open http://127.0.0.1:8765
-```
-
-After editing `server.py`, restart the server — Python keeps the old code in memory:
-```bash
-lsof -ti tcp:8765 | xargs kill -9 && python3 webui/server.py
-```
-
-**Model selection:** The `model:` field in each agent's frontmatter (e.g. `model: sonnet` in `infographic.md`) is **only used when the agent is invoked inside Claude Code**. The web UI ignores it entirely — the model dropdown passes `--model <alias>` directly to `claude -p`, so whatever you select in the UI is what runs. The frontmatter default has no effect on web UI runs.
-
-**How it works:**
-- Prompts are loaded verbatim from `.claude/agents/<mode>.md` — no prompt duplication.
-- The server strips "write the file yourself" instructions from prompts and runs with `--tools ""` + `--disallowedTools Write Edit Bash`, so the model returns text on stdout; the server saves it. No permission prompts.
-- `.vtt` / `.srt` timestamps and cue numbers are stripped before the text reaches the model.
-- Accepts `.txt`, `.srt`, `.md`, `.vtt`. Outputs use the same suffix conventions as `smart_transcript.py`.
+`passive-to-active-english` does tense drilling + phrase practice (Recaps → 4 first-person tenses → Phrases + Fill-in-the-Blank), **not** verbatim line extraction — use `speaking` for that.
 
 ## Dependencies
 
 | Dependency | Required for |
 | --- | --- |
 | Python 3.10+ | Everything |
-| `claude` CLI (logged in) | LLM engine (default). Install: `npm install -g @anthropic-ai/claude-code` |
+| `claude` CLI (logged in) | LLM engine (default) + web UI. Install: `npm install -g @anthropic-ai/claude-code` |
