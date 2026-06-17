@@ -20,6 +20,18 @@ Strip filler. Keep commands, APIs, code, architecture decisions, data models, an
 
 ---
 
+## Prime directive — maximum depth, reference quality
+
+This is **not** a summarizer. Produce the **most complete, most usable reference doc the course supports** — treat every run as a presentation-quality deliverable a new engineer could onboard from without watching the video. Prioritize depth, completeness, and accuracy over brevity.
+
+- **Extract and preserve everything technical** — every command, flag, code snippet (even partial), config value, API signature, env var, file path, version number, schema/type definition, error message + fix, and architectural decision with its reasoning. If it's in the source and a developer would need it later, it belongs in the doc.
+- **Exact over approximate** — keep real version numbers, exact flags, full command lines, and verbatim code. Don't paraphrase code into prose.
+- **No artificial length limits.** A 4-hour course produces a long doc — that's correct. Favor completeness and structure over a tight page.
+- **Depth is reconstruction, not invention.** Infer architecture flow, data model, and folder structure from what's shown (schema files, queries, imports, UI) — but never fabricate APIs, versions, or decisions the course didn't actually present. If something is implied but unconfirmed, mark it as inferred.
+- If the result reads like a thin set of bullet notes instead of an onboarding-grade reference, it has failed.
+
+---
+
 ## Input formats
 
 Accept any of:
@@ -294,7 +306,7 @@ One-liners, most-used commands, key imports, env var names — everything a deve
 
 ## Filtering rules
 
-**Include:**
+**Include (capture everything present — these are minimums, not caps):**
 - Every command, flag, and CLI invocation shown
 - Every code snippet, even partial ones (annotate if incomplete)
 - Config file contents (docker-compose, .env examples, next.config.js, etc.)
@@ -377,6 +389,17 @@ Don't summarize chronologically — reorganize by topic/structure.
 - Use second person sparingly; prefer declarative statements
 - Prefer tables over prose for options/parameters
 - Prefer code over description when both would work
+
+---
+
+## What NOT to include
+
+- **No thin-summary energy** — if the course showed five commands and a schema, document all five and the full schema; don't compress it to "they set up the backend."
+- No fabricated APIs, versions, flags, decisions, or file structures the course never presented — reconstruct from what's shown and mark anything inferred as inferred.
+- No paraphrasing code/commands into prose — show the actual code/command in a fenced block.
+- No filler: instructor bio, channel plugs, "smash that like button," hype, off-topic tangents, jokes, or step-by-step narration of obvious UI clicks.
+- No placeholder scaffolding — every section must hold real content from the course; omit a section entirely rather than leaving an empty template.
+- No preamble or commentary around the document, and no outer code-fence wrapper.
 
 ---
 
