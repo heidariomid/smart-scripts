@@ -59,6 +59,18 @@ MODELS = [
     {"alias": "haiku", "label": "Haiku 4.5 (fastest)"},
 ]
 
+# Effort (reasoning) levels accepted by `claude --effort`. Higher = more
+# thinking, slower + more expensive. An empty alias means "model default".
+EFFORTS = [
+    {"alias": "", "label": "Default"},
+    {"alias": "low", "label": "Low (fastest)"},
+    {"alias": "medium", "label": "Medium"},
+    {"alias": "high", "label": "High"},
+    {"alias": "xhigh", "label": "Extra high"},
+    {"alias": "max", "label": "Max (most thorough)"},
+]
+VALID_EFFORTS = {e["alias"] for e in EFFORTS if e["alias"]}
+
 FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 
 
@@ -150,17 +162,29 @@ _WRITE_LINE_RE = re.compile(
 )
 
 
-def sanitize_prompt(prompt: str) -> str:
-    """Remove 'write the file yourself' instructions so the model returns text."""
-    cleaned = _WRITE_LINE_RE.sub("", prompt)
-    return cleaned.rstrip() + (
+def sanitize_prompt(prompt: str, extra: str | None = None) -> str:
+    """Remove 'write the file yourself' instructions so the model returns text.
+
+    `extra`, if given, is the user's free-text instructions from the web UI; it
+    is appended as an explicit, high-priority addendum the model must honor on
+    top of the base agent prompt.
+    """
+    cleaned = _WRITE_LINE_RE.sub("", prompt).rstrip()
+    if extra:
+        cleaned += (
+            "\n\n## Additional instructions from the user (high priority)\n"
+            "Apply these on top of everything above. Where they conflict with the "
+            "defaults, the user's instructions win:\n\n" + extra.strip()
+        )
+    return cleaned + (
         "\n\nReturn the complete result as plain text in your reply. "
         "Do not wrap it in a code fence."
     )
 
 
 def run_claude(text: str, prompt: str, model: str | None = None,
-               timeout: int = LLM_TIMEOUT) -> str:
+               effort: str | None = None, timeout: int = LLM_TIMEOUT,
+               extra: str | None = None) -> str:
     if shutil.which("claude") is None:
         raise RuntimeError("claude CLI not found on PATH — install it and log in")
 
@@ -168,12 +192,14 @@ def run_claude(text: str, prompt: str, model: str | None = None,
     # return the result on stdout. --tools "" disables tools; --disallowedTools
     # additionally denies the write-capable ones so the model reports cleanly
     # instead of emitting stray function-call text.
-    cmd = ["claude", "-p", sanitize_prompt(prompt),
+    cmd = ["claude", "-p", sanitize_prompt(prompt, extra),
            "--output-format", "text",
            "--tools", "",
            "--disallowedTools", "Write", "Edit", "NotebookEdit", "Bash"]
     if model:
         cmd += ["--model", model]
+    if effort:
+        cmd += ["--effort", effort]
     try:
         result = subprocess.run(
             cmd,
@@ -293,6 +319,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json({
                     "modes": list_modes(),
                     "models": MODELS,
+                    "efforts": EFFORTS,
                     "sourceExts": sorted(SOURCE_EXTS),
                     "outputDir": str(OUTPUT_DIR),
                 })
@@ -313,10 +340,19 @@ class Handler(BaseHTTPRequestHandler):
 
             mode = (fields.get("mode") or "").strip()
             model = (fields.get("model") or "").strip() or None
+            effort = (fields.get("effort") or "").strip() or None
+            extra = (fields.get("extra") or "").strip() or None
             file_part = fields.get("file")
+
+            if extra and len(extra) > 4000:
+                self._send_json({"error": "extra instructions too long (max 4000 chars)"}, 400)
+                return
 
             if mode not in MODE_SUFFIX:
                 self._send_json({"error": f"unknown mode: {mode!r}"}, 400)
+                return
+            if effort and effort not in VALID_EFFORTS:
+                self._send_json({"error": f"unknown effort: {effort!r}"}, 400)
                 return
             if not isinstance(file_part, dict) or not file_part.get("filename"):
                 self._send_json({"error": "no file uploaded"}, 400)
@@ -341,7 +377,7 @@ class Handler(BaseHTTPRequestHandler):
             (OUTPUT_DIR / filename).write_text(raw, encoding="utf-8")
 
             prompt = load_prompt(mode)
-            result = run_claude(text, prompt, model=model)
+            result = run_claude(text, prompt, model=model, effort=effort, extra=extra)
 
             out_path = OUTPUT_DIR / output_name_for(filename, mode)
             out_path.write_text(result, encoding="utf-8")
@@ -350,6 +386,7 @@ class Handler(BaseHTTPRequestHandler):
                 "ok": True,
                 "mode": mode,
                 "model": model,
+                "effort": effort,
                 "outputPath": str(out_path),
                 "isHtml": out_path.suffix.lower() == ".html",
                 "content": result,

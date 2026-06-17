@@ -79,6 +79,7 @@
         margin: 16px 0 6px;
       }
       select,
+      textarea,
       button {
         font: inherit;
         color: var(--fg);
@@ -87,6 +88,14 @@
         border-radius: 8px;
         padding: 10px 12px;
         width: 100%;
+      }
+      textarea {
+        resize: vertical;
+        min-height: 64px;
+        line-height: 1.5;
+      }
+      textarea::placeholder {
+        color: var(--muted);
       }
       .row {
         display: flex;
@@ -201,8 +210,20 @@
             <label for="model">Model</label>
             <select id="model"></select>
           </div>
+          <div>
+            <label for="effort">Effort</label>
+            <select id="effort"></select>
+          </div>
         </div>
         <div class="desc" id="modeDesc"></div>
+
+        <label for="extra">Extra instructions <span style="opacity: 0.6">(optional)</span></label>
+        <textarea
+          id="extra"
+          rows="3"
+          maxlength="4000"
+          placeholder="Add anything to steer the output — tone, focus, length, sections to emphasize, things to skip… Appended to the agent's prompt and takes priority where it conflicts."
+        ></textarea>
 
         <button class="run" id="runBtn" disabled>Run</button>
         <div class="status" id="status"></div>
@@ -219,6 +240,7 @@
       const $ = (id) => document.getElementById(id);
       let modes = [],
         models = [],
+        efforts = [],
         selectedFile = null;
 
       const drop = $("drop"),
@@ -226,6 +248,8 @@
         fileName = $("fileName");
       const modeSel = $("mode"),
         modelSel = $("model"),
+        effortSel = $("effort"),
+        extraEl = $("extra"),
         modeDesc = $("modeDesc");
       const runBtn = $("runBtn"),
         statusEl = $("status");
@@ -274,6 +298,7 @@
           const data = await res.json();
           modes = data.modes || [];
           models = data.models || [];
+          efforts = data.efforts || [];
           $("exts").textContent = (data.sourceExts || []).join(" · ");
           modeSel.innerHTML = "";
           for (const m of modes) {
@@ -289,6 +314,13 @@
             o.value = m.alias;
             o.textContent = m.label;
             modelSel.appendChild(o);
+          }
+          effortSel.innerHTML = "";
+          for (const e of efforts) {
+            const o = document.createElement("option");
+            o.value = e.alias;
+            o.textContent = e.label;
+            effortSel.appendChild(o);
           }
           modeSel.dispatchEvent(new Event("change"));
         } catch (e) {
@@ -307,6 +339,8 @@
         const fd = new FormData();
         fd.append("mode", modeSel.value);
         fd.append("model", modelSel.value);
+        fd.append("effort", effortSel.value);
+        fd.append("extra", extraEl.value);
         fd.append("file", selectedFile);
 
         try {

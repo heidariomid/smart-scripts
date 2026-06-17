@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tokyo → Kagoshima by Bullet Train | The Shinkansen Journey</title>
+<style>
+  :root {
+    --ink:        hsl(222, 32%, 14%);
+    --ink-soft:   hsl(222, 18%, 34%);
+    --ink-faint:  hsl(222, 12%, 52%);
+    --paper:      hsl(210, 33%, 98%);
+    --card:       hsl(0, 0%, 100%);
+    --line:       hsl(214, 25%, 90%);
+
+    --red:        hsl(353, 78%, 48%);   /* Shinkansen / Japan red */
+    --red-deep:   hsl(353, 72%, 38%);
+    --blue:       hsl(212, 80%, 46%);
+    --blue-deep:  hsl(214, 72%, 32%);
+    --green:      hsl(158, 64%, 38%);   /* Green Car */
+    --green-soft: hsl(158, 48%, 94%);
+    --gold:       hsl(38, 92%, 50%);
+    --gold-soft:  hsl(40, 90%, 95%);
+    --violet:     hsl(264, 52%, 54%);
+
+    --red-wash:   hsl(353, 70%, 96%);
+    --blue-wash:  hsl(212, 70%, 96%);
+
+    --shadow:     0 1px 2px hsla(222,30%,20%,.06), 0 8px 24px hsla(222,30%,20%,.07);
+    --shadow-lg:  0 2px 4px hsla(222,30%,20%,.08), 0 20px 50px hsla(222,30%,25%,.14);
+    --radius:     18px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(1200px 600px at 80% -10%, hsla(353,80%,55%,.06), transparent 60%),
+      radial-gradient(1000px 500px at -10% 30%, hsla(212,80%,55%,.06), transparent 55%),
+      var(--paper);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 22px; }
+
+  /* ============ HERO ============ */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    background:
+      linear-gradient(135deg, hsl(353,74%,42%) 0%, hsl(353,68%,34%) 45%, hsl(214,68%,28%) 100%);
+    color: #fff;
+    padding: 64px 0 90px;
+  }
+  .hero::before {
+    content: "";
+    position: absolute; inset: 0;
+    background:
+      repeating-linear-gradient(115deg, hsla(0,0%,100%,.05) 0 2px, transparent 2px 46px);
+    pointer-events: none;
+  }
+  .hero::after {
+    content: "新幹線";
+    position: absolute;
+    right: -8px; bottom: -36px;
+    font-size: clamp(80px, 18vw, 220px);
+    font-weight: 800;
+    color: hsla(0,0%,100%,.07);
+    letter-spacing: 4px;
+    line-height: 1;
+    pointer-events: none;
+  }
+  .hero .wrap { position: relative; z-index: 2; }
+  .kicker {
+    display: inline-flex; align-items: center; gap: 9px;
+    font-size: .8rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    background: hsla(0,0%,100%,.14);
+    border: 1px solid hsla(0,0%,100%,.28);
+    padding: 7px 15px; border-radius: 100px;
+    backdrop-filter: blur(4px);
+  }
+  .hero h1 {
+    font-size: clamp(2.2rem, 6vw, 4rem);
+    line-height: 1.04; font-weight: 800;
+    margin: 22px 0 14px; letter-spacing: -.02em;
+    max-width: 16ch;
+  }
+  .hero .sub {
+    font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+    color: hsla(0,0%,100%,.92); max-width: 60ch; font-weight: 400;
+  }
+  .route-chips {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    margin-top: 30px; font-weight: 700; font-size: 1.05rem;
+  }
+  .route-chips .stop {
+    background: #fff; color: var(--red-deep);
+    padding: 8px 16px; border-radius: 100px; box-shadow: var(--shadow);
+  }
+  .route-chips .arrow { color: hsla(0,0%,100%,.75); font-size: 1.3rem; }
+  .route-chips .stop.muted { background: hsla(0,0%,100%,.18); color:#fff; font-weight:600; }
+
+  /* ============ STAT ROW ============ */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-top: -52px;
+    position: relative; z-index: 5;
+  }
+  .stat {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 22px 18px 20px;
+    box-shadow: var(--shadow-lg);
+    border-top: 4px solid var(--accent, var(--red));
+    text-align: center;
+  }
+  .stat .ico { font-size: 1.5rem; }
+  .stat .num {
+    font-size: clamp(1.5rem, 3.4vw, 2.35rem);
+    font-weight: 800; letter-spacing: -.02em; line-height: 1.05;
+    color: var(--accent, var(--red)); margin-top: 4px;
+  }
+  .stat .lbl { font-size: .78rem; color: var(--ink-soft); font-weight: 600; margin-top: 5px; line-height:1.3; }
+
+  /* ============ SECTION SCAFFOLD ============ */
+  section { padding: 56px 0 8px; }
+  .sec-head { margin-bottom: 26px; max-width: 70ch; }
+  .sec-eyebrow {
+    display: inline-block; font-size: .76rem; font-weight: 800; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--red); margin-bottom: 8px;
+  }
+  .sec-head h2 {
+    font-size: clamp(1.6rem, 3.6vw, 2.3rem); font-weight: 800; letter-spacing: -.02em;
+    line-height: 1.12;
+  }
+  .sec-head p { color: var(--ink-soft); margin-top: 10px; font-size: 1.05rem; }
+
+  /* ============ TIMELINE ============ */
+  .timeline {
+    position: relative;
+    margin-left: 8px;
+    padding-left: 30px;
+    border-left: 3px solid var(--line);
+  }
+  .tl-item { position: relative; padding: 0 0 26px 6px; }
+  .tl-item::before {
+    content: "";
+    position: absolute; left: -41px; top: 4px;
+    width: 17px; height: 17px; border-radius: 50%;
+    background: var(--dot, var(--red));
+    box-shadow: 0 0 0 4px var(--paper), 0 0 0 6px var(--dotr, hsla(353,78%,48%,.25));
+  }
+  .tl-item.major::before { width: 21px; height: 21px; left: -43px; top: 2px; }
+  .tl-time {
+    display: inline-block; font-variant-numeric: tabular-nums;
+    font-weight: 800; font-size: .92rem; color: var(--dot, var(--red));
+    background: var(--dotw, var(--red-wash)); padding: 2px 10px; border-radius: 7px;
+  }
+  .tl-item h4 { font-size: 1.12rem; margin: 8px 0 4px; font-weight: 700; }
+  .tl-item p { color: var(--ink-soft); font-size: .96rem; }
+  .tl-meta { font-size:.82rem; color: var(--ink-faint); margin-top: 6px; font-weight:600; }
+  .ontime-badge {
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:.74rem; font-weight:800; color: var(--green);
+    background: var(--green-soft); padding: 2px 9px; border-radius: 100px; margin-left: 6px;
+  }
+
+  /* ============ CARD GRID ============ */
+  .grid { display: grid; gap: 18px; }
+  .grid.g3 { grid-template-columns: repeat(3, 1fr); }
+  .grid.g2 { grid-template-columns: repeat(2, 1fr); }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px;
+    box-shadow: var(--shadow);
+  }
+  .card h3 {
+    font-size: 1.12rem; font-weight: 750; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card h3 .badge {
+    font-size: 1.3rem; width: 40px; height: 40px; border-radius: 11px;
+    display: grid; place-items: center; flex: none;
+    background: var(--bgc, var(--red-wash));
+  }
+  .card ul { list-style: none; }
+  .card li {
+    position: relative; padding-left: 20px; margin-bottom: 8px;
+    font-size: .95rem; color: var(--ink-soft);
+  }
+  .card li::before {
+    content: "›"; position: absolute; left: 2px; top: -1px;
+    color: var(--red); font-weight: 800;
+  }
+  .card li strong { color: var(--ink); }
+
+  /* ============ COMPARE TABLE ============ */
+  .compare {
+    width: 100%; border-collapse: separate; border-spacing: 0;
+    background: var(--card); border-radius: var(--radius); overflow: hidden;
+    box-shadow: var(--shadow); border: 1px solid var(--line);
+    font-size: .95rem;
+  }
+  .compare th, .compare td { padding: 14px 16px; text-align: left; vertical-align: top; }
+  .compare thead th {
+    background: hsl(222,30%,16%); color:#fff; font-weight: 700; font-size: .9rem;
+  }
+  .compare thead th:nth-child(2) { background: var(--green); }
+  .compare thead th:nth-child(3) { background: hsl(222,18%,40%); }
+  .compare tbody tr:nth-child(even) { background: hsl(210,33%,98.5%); }
+  .compare tbody td { border-top: 1px solid var(--line); }
+  .compare td:first-child { font-weight: 700; color: var(--ink); }
+  .compare .yes { color: var(--green); font-weight: 700; }
+  .compare .no  { color: var(--ink-faint); }
+
+  /* ============ TRAIN ANATOMY (CSS bar viz) ============ */
+  .train-viz { background: var(--card); border:1px solid var(--line); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); }
+  .train-label { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; flex-wrap:wrap; gap:6px;}
+  .train-label .name { font-weight:800; font-size:1.1rem; }
+  .train-label .tag { font-size:.8rem; color:var(--ink-faint); font-weight:600; }
+  .cars { display:flex; gap:4px; align-items:flex-end; }
+  .car {
+    flex:1; height:46px; border-radius:7px; display:grid; place-items:center;
+    font-size:.7rem; font-weight:800; color: hsla(222,30%,20%,.55);
+    background: hsl(214,30%,90%);
+  }
+  .car.green { background: var(--green); color:#fff; box-shadow: 0 4px 12px hsla(158,64%,38%,.4); }
+  .car.mine  { outline: 3px solid var(--gold); outline-offset: 2px; }
+  .car-legend { display:flex; gap:18px; flex-wrap:wrap; margin-top:14px; font-size:.82rem; color:var(--ink-soft); font-weight:600; }
+  .car-legend span { display:inline-flex; align-items:center; gap:7px; }
+  .swatch { width:14px; height:14px; border-radius:4px; display:inline-block; }
+
+  /* ============ HIGHLIGHTS / QUOTES ============ */
+  .quotes { display:grid; grid-template-columns: repeat(2,1fr); gap:18px; }
+  .quote {
+    background: var(--card); border-radius: var(--radius); padding: 24px 24px 22px;
+    border-left: 5px solid var(--qc, var(--red)); box-shadow: var(--shadow);
+    position: relative;
+  }
+  .quote::before {
+    content: "\201C"; position:absolute; top:6px; right:18px;
+    font-size: 4rem; color: var(--qc, var(--red)); opacity:.14; font-family: Georgia, serif; line-height:1;
+  }
+  .quote p { font-size: 1.06rem; font-weight: 600; color: var(--ink); font-style: italic; }
+  .quote .who { margin-top:10px; font-size:.82rem; color:var(--ink-faint); font-weight:700; font-style:normal; text-transform:uppercase; letter-spacing:.05em;}
+
+  /* ============ PEOPLE ============ */
+  .people { display:grid; grid-template-columns: repeat(3,1fr); gap:16px; }
+  .person {
+    background: var(--card); border:1px solid var(--line); border-radius: var(--radius);
+    padding: 20px; box-shadow: var(--shadow); text-align:center;
+  }
+  .person .av {
+    width:58px; height:58px; border-radius:50%; margin:0 auto 12px;
+    display:grid; place-items:center; font-size:1.6rem;
+    background: var(--avbg, var(--blue-wash));
+  }
+  .person .nm { font-weight:800; font-size:1.02rem; }
+  .person .rl { font-size:.82rem; color:var(--red); font-weight:700; margin:2px 0 8px; }
+  .person .ds { font-size:.9rem; color:var(--ink-soft); }
+
+  /* ============ KPI / EFFICIENCY DASHBOARD ============ */
+  .dash {
+    background: linear-gradient(135deg, hsl(214,72%,30%), hsl(222,40%,18%));
+    border-radius: 24px; padding: 36px; color:#fff; box-shadow: var(--shadow-lg);
+  }
+  .dash h2 { color:#fff; font-size: clamp(1.5rem,3.4vw,2.1rem); font-weight:800; }
+  .dash .dsub { color: hsla(0,0%,100%,.78); margin: 8px 0 26px; }
+  .dash-grid { display:grid; grid-template-columns: repeat(4,1fr); gap:18px; }
+  .kpi {
+    background: hsla(0,0%,100%,.07); border:1px solid hsla(0,0%,100%,.14);
+    border-radius: 16px; padding: 20px;
+  }
+  .kpi .k-num { font-size: clamp(1.6rem,3.6vw,2.4rem); font-weight:800; letter-spacing:-.02em; }
+  .kpi .k-num.green { color: hsl(150,70%,62%); }
+  .kpi .k-lbl { font-size:.82rem; color: hsla(0,0%,100%,.7); font-weight:600; margin-top:4px; }
+  .kpi .k-sub { font-size:.76rem; color: hsla(0,0%,100%,.55); margin-top:8px; }
+  /* gauge bars */
+  .bars { margin-top: 26px; display:grid; gap:14px; }
+  .bar-row { display:grid; grid-template-columns: 130px 1fr 52px; align-items:center; gap:12px; }
+  .bar-row .bl { font-size:.86rem; font-weight:600; color:hsla(0,0%,100%,.85); }
+  .bar-track { height:12px; background: hsla(0,0%,100%,.12); border-radius:100px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:100px; background: linear-gradient(90deg, hsl(150,70%,55%), hsl(168,72%,48%)); }
+  .bar-row .bv { font-size:.82rem; font-weight:800; text-align:right; }
+
+  /* ============ COST / SPEED CALC ============ */
+  .splitviz { display:grid; grid-template-columns: 1fr 1fr; gap:18px; }
+  .factbox { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:24px; box-shadow:var(--shadow); }
+  .factbox h3 { font-size:1.05rem; font-weight:800; margin-bottom:16px; }
+  .speed-row { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px dashed var(--line); font-size:.95rem; }
+  .speed-row:last-child { border-bottom:0; }
+  .speed-row .v { font-weight:800; color:var(--blue-deep); font-variant-numeric:tabular-nums; }
+  .pieish {
+    display:flex; align-items:center; gap:18px;
+  }
+  .donut {
+    width:130px; height:130px; border-radius:50%; flex:none;
+    background: conic-gradient(var(--red) 0 92%, hsl(214,30%,88%) 92% 100%);
+    display:grid; place-items:center; position:relative;
+  }
+  .donut::after {
+    content:""; position:absolute; width:88px; height:88px; border-radius:50%; background:var(--card);
+  }
+  .donut .dn-c { position:relative; z-index:2; text-align:center; }
+  .donut .dn-c b { font-size:1.4rem; font-weight:800; color:var(--red-deep); display:block; }
+  .donut .dn-c small { font-size:.68rem; color:var(--ink-faint); font-weight:700; }
+
+  /* ============ ON-BOARD FEATURES ============ */
+  .feat-grid { display:grid; grid-template-columns: repeat(4,1fr); gap:14px; }
+  .feat {
+    background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 16px;
+    box-shadow:var(--shadow); text-align:center;
+  }
+  .feat .fi { font-size:1.7rem; }
+  .feat .ft { font-weight:750; font-size:.95rem; margin:8px 0 4px; }
+  .feat .fd { font-size:.82rem; color:var(--ink-soft); }
+
+  /* ============ VERDICT ============ */
+  .verdict {
+    background: linear-gradient(135deg, hsl(158,60%,34%), hsl(168,64%,28%));
+    color:#fff; border-radius: 24px; padding: 44px 38px; box-shadow: var(--shadow-lg);
+    position:relative; overflow:hidden;
+  }
+  .verdict::after {
+    content:"⌚"; position:absolute; right:-10px; bottom:-30px; font-size:200px; opacity:.08;
+  }
+  .verdict .ve { font-size:.8rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; opacity:.85; }
+  .verdict h2 { color:#fff; font-size:clamp(1.6rem,4vw,2.4rem); margin:10px 0 14px; max-width:24ch; }
+  .verdict p { font-size:1.08rem; max-width:62ch; color:hsla(0,0%,100%,.92); position:relative; z-index:2; }
+  .vscore { display:flex; gap:30px; margin-top:26px; flex-wrap:wrap; position:relative; z-index:2;}
+  .vscore .vs { }
+  .vscore .vs b { font-size:2rem; font-weight:800; display:block; }
+  .vscore .vs span { font-size:.8rem; opacity:.85; font-weight:600; }
+
+  /* ============ FOOTER ============ */
+  footer {
+    text-align:center; padding: 40px 0 60px; color: var(--ink-faint); font-size:.85rem;
+  }
+  footer .fr { display:inline-flex; gap:8px; align-items:center; font-weight:700; color:var(--ink-soft); }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 900px) {
+    .stat-row { grid-template-columns: repeat(2,1fr); }
+    .grid.g3, .people, .dash-grid, .feat-grid { grid-template-columns: repeat(2,1fr); }
+    .quotes { grid-template-columns: 1fr; }
+    .splitviz, .grid.g2 { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    .stat-row { grid-template-columns: 1fr 1fr; margin-top:-40px; }
+    .grid.g3, .people, .dash-grid, .feat-grid { grid-template-columns: 1fr; }
+    .bar-row { grid-template-columns: 92px 1fr 44px; }
+    .hero { padding: 44px 0 80px; }
+    .cars { flex-wrap: wrap; }
+    .car { min-width: 30px; height: 38px; }
+    .pieish { flex-direction: column; text-align:center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="wrap">
+    <span class="kicker">🚄 Shinkansen Field Report · Spring · Cherry Blossom Season</span>
+    <h1>Tokyo to Kagoshima on Japan's Fastest Bullet Train</h1>
+    <p class="sub">One man, one one-way ticket, and 1,400 km of track — the full length of Japan's main island chain to its most southern point, riding the Shinkansen end to end. A study in speed, spotlessness, and the kindness of strangers.</p>
+    <div class="route-chips">
+      <span class="stop">Tokyo</span>
+      <span class="arrow">→</span>
+      <span class="stop muted">Nagoya</span>
+      <span class="arrow">→</span>
+      <span class="stop muted">Kyoto</span>
+      <span class="arrow">→</span>
+      <span class="stop">Osaka ⇄</span>
+      <span class="arrow">→</span>
+      <span class="stop muted">Hiroshima</span>
+      <span class="arrow">→</span>
+      <span class="stop muted">Kumamoto</span>
+      <span class="arrow">→</span>
+      <span class="stop">Kagoshima</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ============ STAT ROW ============ -->
+  <div class="stat-row">
+    <div class="stat" style="--accent:var(--red)">
+      <div class="ico">📏</div>
+      <div class="num">1,400<span style="font-size:.5em">km</span></div>
+      <div class="lbl">Total distance travelled<br>Tokyo → Kagoshima</div>
+    </div>
+    <div class="stat" style="--accent:var(--blue)">
+      <div class="ico">⏱️</div>
+      <div class="num">7<span style="font-size:.5em">hrs</span></div>
+      <div class="lbl">Door-to-door journey time, two trains</div>
+    </div>
+    <div class="stat" style="--accent:var(--green)">
+      <div class="ico">💷</div>
+      <div class="num">£200</div>
+      <div class="lbl">Ticket price <span style="white-space:nowrap">(~$250)</span> for the full run</div>
+    </div>
+    <div class="stat" style="--accent:var(--gold)">
+      <div class="ico">🎯</div>
+      <div class="num">0<span style="font-size:.5em">sec</span></div>
+      <div class="lbl">Delay across the entire trip — to the second</div>
+    </div>
+    <div class="stat" style="--accent:var(--violet)">
+      <div class="ico">🏙️</div>
+      <div class="num">37M</div>
+      <div class="lbl">People in the Tokyo metro left behind</div>
+    </div>
+  </div>
+
+  <!-- ============ THE MISSION ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-eyebrow">The Premise</span>
+      <h2>The plan: cross an entire country by rail before lunch — almost.</h2>
+      <p>The goal was simple and audacious — board in central Tokyo and ride all the way to Kagoshima, the southern tip of mainland Japan, in a single day. The Japanese rail system is billed as the most advanced in the world and famously never late. This was the test, and a first-ever Shinkansen ride at that.</p>
+    </div>
+    <div class="grid g3">
+      <div class="card" style="--bgc:var(--red-wash)">
+        <h3><span class="badge">🚄</span> What "Shinkansen" means</h3>
+        <ul>
+          <li><strong>Shinkansen (新幹線)</strong> = "new trunk line" — Japan's high-speed bullet train network.</li>
+          <li>Reputation: <strong>the most advanced rail system on Earth</strong>, and "never delayed."</li>
+          <li>This trip put both claims to a 7-hour, two-train stress test.</li>
+        </ul>
+      </div>
+      <div class="card" style="--bgc:var(--blue-wash)">
+        <h3><span class="badge">🎫</span> The ticket</h3>
+        <ul>
+          <li>Class booked: <strong>Green Car</strong> — Japan's equivalent of business class.</li>
+          <li>Price: <strong>~£200 / $250</strong> for the entire Tokyo→Kagoshima route.</li>
+          <li>Format: scannable <strong>QR code</strong> at the gates; one-way only.</li>
+        </ul>
+      </div>
+      <div class="card" style="--bgc:var(--gold-soft)">
+        <h3><span class="badge">😅</span> The rocky start</h3>
+        <ul>
+          <li>Got <strong>lost finding Tokyo Station</strong> — couldn't read the signs.</li>
+          <li>Wrong station first (Ueno area); a <strong>20–30 min walk</strong> away.</li>
+          <li>Made the train with minutes to spare — "sweating buckets."</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TIMELINE ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-eyebrow">Hour by Hour</span>
+      <h2>The journey timeline — every stop, every second accounted for</h2>
+      <p>Two scheduled trains with a connection in Osaka. The headline finding: departures and arrivals landed on the clock <em>exactly</em>, "not even a second late."</p>
+    </div>
+
+    <div class="timeline">
+      <div class="tl-item major" style="--dot:var(--red);--dotr:hsla(353,78%,48%,.25);--dotw:var(--red-wash)">
+        <span class="tl-time">~09:50</span>
+        <h4>Lost in central Tokyo 🏃‍♂️</h4>
+        <p>Running late, unable to read the signage, asking stranger after stranger for "Shinkansen." Sent first to the wrong station, then pointed toward Tokyo Station — a 20–30 minute walk under blooming cherry blossoms.</p>
+        <div class="tl-meta">14 minutes to spare on arrival at the platform</div>
+      </div>
+
+      <div class="tl-item major" style="--dot:var(--red);--dotr:hsla(353,78%,48%,.25);--dotw:var(--red-wash)">
+        <span class="tl-time">10:09</span>
+        <h4>Depart Tokyo · Platform 19 · N700 Supreme 🚄<span class="ontime-badge">✓ on the dot</span></h4>
+        <p>Boarded Car 8 — the Green Car, Seat 11D. The train pulled out at 10:09 exactly. "I genuinely thought I was going to miss the train."</p>
+        <div class="tl-meta">Train 1 of 2 · 16 carriages · full to capacity</div>
+      </div>
+
+      <div class="tl-item" style="--dot:var(--blue);--dotr:hsla(212,80%,46%,.25);--dotw:var(--blue-wash)">
+        <span class="tl-time">~11:?</span>
+        <h4>Brief stop · Nagoya</h4>
+        <p>The new friends from the Green Car — a family of investors splitting time between Nagoya and Hong Kong — got off here. He missed saying goodbye: "absolutely gutted."</p>
+        <div class="tl-meta">Nagoya pitched as Japan's miso-katsu capital · "Naguya soul food"</div>
+      </div>
+
+      <div class="tl-item" style="--dot:var(--blue);--dotr:hsla(212,80%,46%,.25);--dotw:var(--blue-wash)">
+        <span class="tl-time">~12:25</span>
+        <h4>Pulling into Kyoto</h4>
+        <p>The signal that the change at Osaka was next. The pace stunned him: "You haven't even got time to look out the window."</p>
+      </div>
+
+      <div class="tl-item major" style="--dot:var(--green);--dotr:hsla(158,64%,38%,.3);--dotw:var(--green-soft)">
+        <span class="tl-time">12:36</span>
+        <h4>Arrive Shin-Osaka · Change trains 🔁<span class="ontime-badge">✓ to the second</span></h4>
+        <p>Tokyo→Osaka covered in ~2h27m. "We left Tokyo at 10:09 on the dot and landed in Osaka at 12:36 on the dot — that train wasn't even a second late." A 50-minute connection window.</p>
+        <div class="tl-meta">Station "looks like an airport" · first-ever time in Osaka · 50 min to connect</div>
+      </div>
+
+      <div class="tl-item" style="--dot:var(--gold);--dotr:hsla(38,92%,50%,.3);--dotw:var(--gold-soft)">
+        <span class="tl-time">12:36–13:23</span>
+        <h4>The Osaka pit stop 🍱</h4>
+        <p>Hunted for proper Japanese food in a vast station. Resisted McDonald's, found the "Japanese answer to a meal deal": a beef item ("number one"), a tuna-ham-lettuce-egg sandwich, Pringles, water and Oreo bits. Located the connection early: Platform 20.</p>
+      </div>
+
+      <div class="tl-item major" style="--dot:var(--red);--dotr:hsla(353,78%,48%,.25);--dotw:var(--red-wash)">
+        <span class="tl-time">13:23</span>
+        <h4>Depart Osaka · Platform 20 · Train 2 🚄<span class="ontime-badge">✓ on time</span></h4>
+        <p>Older 8-carriage train, Car 6, Seat 13A. Just as busy as the first. "The second I sit down, we leave Osaka."</p>
+        <div class="tl-meta">Train 2 of 2 · 8 carriages · one Green Car</div>
+      </div>
+
+      <div class="tl-item" style="--dot:var(--blue);--dotr:hsla(212,80%,46%,.25);--dotw:var(--blue-wash)">
+        <span class="tl-time">~14:?</span>
+        <h4>Hiroshima · Tokuyama</h4>
+        <p>"These trains stop for one second and then they're gone again. No wonder they're always on time." Met an Indian-Australian traveller from Sydney bound for Hiroshima; shared the 10/10 Japanese Pringles.</p>
+      </div>
+
+      <div class="tl-item" style="--dot:var(--blue);--dotr:hsla(212,80%,46%,.25);--dotw:var(--blue-wash)">
+        <span class="tl-time">~15:?</span>
+        <h4>Kumamoto · Sendai</h4>
+        <p>Crowds thinned out. "People must miss this train — it starts and stops so quickly. I have not seen a train more efficient than this."</p>
+      </div>
+
+      <div class="tl-item major" style="--dot:var(--green);--dotr:hsla(158,64%,38%,.3);--dotw:var(--green-soft)">
+        <span class="tl-time">~17:09</span>
+        <h4>Arrive Kagoshima 🎌<span class="ontime-badge">✓ never a second late</span></h4>
+        <p>"1,400 km travelled in 7 hours. Super efficient. Really enjoyed it." Not a second of delay the entire way from Tokyo.</p>
+        <div class="tl-meta">Journey complete · southern tip of mainland Japan reached</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ EFFICIENCY DASHBOARD ============ -->
+  <section>
+    <div class="dash">
+      <h2>⚡ The efficiency dashboard</h2>
+      <p class="dsub">Why Japan's rail beats flying on this route — measured by the trip's own numbers.</p>
+      <div class="dash-grid">
+        <div class="kpi">
+          <div class="k-num green">100%</div>
+          <div class="k-lbl">On-time performance</div>
+          <div class="k-sub">Every departure & arrival hit exactly. "Not even a second late."</div>
+        </div>
+        <div class="kpi">
+          <div class="k-num">~200<span style="font-size:.5em">km/h</span></div>
+          <div class="k-lbl">Effective average speed</div>
+          <div class="k-sub">1,400 km ÷ 7 hrs, stops included. Top speed far higher.</div>
+        </div>
+        <div class="kpi">
+          <div class="k-num">~1<span style="font-size:.5em">sec</span></div>
+          <div class="k-lbl">Typical station dwell</div>
+          <div class="k-sub">"Stop for one second and then they're gone again."</div>
+        </div>
+        <div class="kpi">
+          <div class="k-num green">£200</div>
+          <div class="k-lbl">Cheaper than flying</div>
+          <div class="k-sub">On most routes flying wins — here the train is both faster door-to-door and cheaper.</div>
+        </div>
+      </div>
+
+      <div class="bars">
+        <div class="bar-row">
+          <span class="bl">Punctuality</span>
+          <div class="bar-track"><div class="bar-fill" style="width:100%"></div></div>
+          <span class="bv">10/10</span>
+        </div>
+        <div class="bar-row">
+          <span class="bl">Cleanliness</span>
+          <div class="bar-track"><div class="bar-fill" style="width:100%"></div></div>
+          <span class="bv">10/10</span>
+        </div>
+        <div class="bar-row">
+          <span class="bl">Comfort</span>
+          <div class="bar-track"><div class="bar-fill" style="width:90%"></div></div>
+          <span class="bv">9/10</span>
+        </div>
+        <div class="bar-row">
+          <span class="bl">Friendliness</span>
+          <div class="bar-track"><div class="bar-fill" style="width:100%"></div></div>
+          <span class="bv">10/10</span>
+        </div>
+        <div class="bar-row">
+          <span class="bl">On-board things to do</span>
+          <div class="bar-track"><div class="bar-fill" style="width:45%"></div></div>
+          <span class="bv">4/10</span>
+        </div>
+        <div class="bar-row">
+          <span class="bl">Value for money</span>
+          <div class="bar-track"><div class="bar-fill" style="width:95%"></div></div>
+          <span class="bv">9.5/10</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TRAIN vs FLY  +  COST DONUT ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-eyebrow">The Counterintuitive Math</span>
+      <h2>Why the train wins where planes usually do</h2>
+      <p>"Normally in any other country, flying would be quicker than taking the train. But in Japan, because the trains are so quick — by the time you get a taxi to the airport, wait, check in and fly — it's quicker just to take the train."</p>
+    </div>
+    <div class="splitviz">
+      <div class="factbox">
+        <h3>🧮 Speed & segment breakdown</h3>
+        <div class="speed-row"><span>Tokyo → Shin-Osaka (Train 1)</span><span class="v">~2h 27m</span></div>
+        <div class="speed-row"><span>Connection window in Osaka</span><span class="v">50 min</span></div>
+        <div class="speed-row"><span>Osaka → Kagoshima (Train 2)</span><span class="v">~3h 45m</span></div>
+        <div class="speed-row"><span>Total distance</span><span class="v">1,400 km</span></div>
+        <div class="speed-row"><span>Total journey</span><span class="v">~7 hrs</span></div>
+        <div class="speed-row"><span>Reach Osaka from Kagoshima</span><span class="v">4 hrs</span></div>
+        <div class="speed-row"><span>Reach Tokyo from Kagoshima</span><span class="v">7 hrs</span></div>
+      </div>
+      <div class="factbox">
+        <h3>⏰ The punctuality proof</h3>
+        <div class="pieish">
+          <div class="donut" style="--red:var(--green)">
+            <div class="dn-c"><b>0 sec</b><small>DELAY</small></div>
+          </div>
+          <div>
+            <p style="font-size:.96rem;color:var(--ink-soft)">The train departed Tokyo at <strong>10:09</strong> and arrived Osaka at <strong>12:36</strong> — both <strong>on the dot</strong>. Across the full 1,400 km, "this train has not been a second delayed since we left Tokyo."</p>
+            <p style="font-size:.9rem;color:var(--ink-faint);margin-top:10px">Doors close instantly; dwell times of seconds keep the whole network honest. "No wonder there's no delays."</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ THE TWO TRAINS COMPARED ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-eyebrow">Rolling Stock</span>
+      <h2>A tale of two bullet trains</h2>
+      <p>The journey used two different trains with distinct personalities — a gleaming flagship out of Tokyo and an older, plainer workhorse south of Osaka.</p>
+    </div>
+
+    <div class="grid g2" style="margin-bottom:20px">
+      <div class="train-viz">
+        <div class="train-label">
+          <span class="name">🚄 Train 1 · N700 Supreme</span>
+          <span class="tag">Tokyo → Osaka · 16 cars</span>
+        </div>
+        <div class="cars">
+          <div class="car">1</div><div class="car">2</div><div class="car">3</div><div class="car">4</div>
+          <div class="car">5</div><div class="car">6</div>
+          <div class="car green">7</div><div class="car green mine">8</div><div class="car green">9</div><div class="car green">10</div>
+          <div class="car">11</div><div class="car">12</div><div class="car">13</div><div class="car">14</div><div class="car">15</div><div class="car">16</div>
+        </div>
+        <div class="car-legend">
+          <span><i class="swatch" style="background:hsl(214,30%,90%)"></i>Economy (front &amp; back)</span>
+          <span><i class="swatch" style="background:var(--green)"></i>Green Car (middle)</span>
+          <span><i class="swatch" style="background:#fff;outline:3px solid var(--gold)"></i>My seat — Car 8, 11D</span>
+        </div>
+      </div>
+
+      <div class="train-viz">
+        <div class="train-label">
+          <span class="name">🚆 Train 2 · Older set</span>
+          <span class="tag">Osaka → Kagoshima · 8 cars</span>
+        </div>
+        <div class="cars">
+          <div class="car">1</div>
+          <div class="car green">2</div>
+          <div class="car">3</div><div class="car">4</div><div class="car">5</div>
+          <div class="car mine">6</div><div class="car">7</div><div class="car">8</div>
+        </div>
+        <div class="car-legend">
+          <span><i class="swatch" style="background:hsl(214,30%,90%)"></i>Economy</span>
+          <span><i class="swatch" style="background:var(--green)"></i>Single Green Car</span>
+          <span><i class="swatch" style="background:#fff;outline:3px solid var(--gold)"></i>My seat — Car 6, 13A (split car: older front / nicer back)</span>
+        </div>
+      </div>
+    </div>
+
+    <table class="compare">
+      <thead>
+        <tr><th>Attribute</th><th>Train 1 — N700 Supreme</th><th>Train 2 — Older set</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Carriages</td><td>16 — "a big train, literally full"</td><td>8 — just as busy</td></tr>
+        <tr><td>Green Cars</td><td>Several, grouped in the middle</td><td>Just one</td></tr>
+        <tr><td>Toilets</td><td class="yes">Heated Japanese seat, bidet spray, adjustable pressure, auto lid</td><td>Spotless — but a plain seat, no bidet</td></tr>
+        <tr><td>Food &amp; drink</td><td class="yes">Mobile-order to seat (Green Car), English menu</td><td class="no">No service — bring your own</td></tr>
+        <tr><td>Cafe car</td><td class="no">None</td><td class="no">None</td></tr>
+        <tr><td>Extras</td><td>Business booth, private booth, luggage area, full-length mirror, footrest, recline</td><td>Crew rooms, sink, full-length mirror, footrest</td></tr>
+        <tr><td>Seat direction</td><td class="yes">Every seat faces forward — not one faces back</td><td>Forward-facing</td></tr>
+        <tr><td>Feel</td><td>Posh, immaculate, polished floors</td><td>Older &amp; plainer, still "posh," still spotless</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============ ON-BOARD FEATURES ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-eyebrow">Life On Board</span>
+      <h2>What's actually on a Shinkansen</h2>
+      <p>Spotless and serene — but deliberately minimal. The cabins are for sitting, sleeping and watching Japan blur past, not for wandering.</p>
+    </div>
+    <div class="feat-grid">
+      <div class="feat"><div class="fi">🚽</div><div class="ft">High-tech toilets</div><div class="fd">Heated bidet seat, spray, adjustable water pressure, automatic lid — a whole cart for facilities.</div></div>
+      <div class="feat"><div class="fi">📱</div><div class="ft">Mobile ordering</div><div class="fd">Green Car passengers order food &amp; drink to their seat via phone — English menu available.</div></div>
+      <div class="feat"><div class="fi">💼</div><div class="ft">Work booths</div><div class="fd">A dedicated business booth plus a private booth for calls or quiet work.</div></div>
+      <div class="feat"><div class="fi">🧳</div><div class="ft">Luggage areas</div><div class="fd">Designated space to stow large bags, plus overhead racks at every seat.</div></div>
+      <div class="feat"><div class="fi">💺</div><div class="ft">Reclining + footrest</div><div class="fd">Green Car: deep recline ("you can have a sleep here"), footrest, generous 2+2 layout.</div></div>
+      <div class="feat"><div class="fi">🪞</div><div class="ft">Mirror &amp; sink</div><div class="fd">Full-length mirror "to get changed in," sinks in the toilet carts.</div></div>
+      <div class="feat"><div class="fi">🚭</div><div class="ft">No smoking</div><div class="fd">On-board smoking rooms discontinued 16 Mar 2024 — old stickers still linger.</div></div>
+      <div class="feat"><div class="fi">✨</div><div class="ft">Immaculate</div><div class="fd">"The floor has literally been polished." Spotless from end to end, both trains.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ GREEN CAR vs ECONOMY VERDICT ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-eyebrow">The Money Question</span>
+      <h2>Green Car vs Economy — is business class worth it?</h2>
+      <p>He paid for the Green Car (business). After walking all 16 then 8 carriages and comparing, his repeated, unambiguous verdict surprised even him.</p>
+    </div>
+    <div class="grid g2">
+      <div class="card" style="--bgc:var(--green-soft)">
+        <h3><span class="badge" style="background:var(--green-soft)">🟢</span> Green Car (Business)</h3>
+        <ul>
+          <li><strong>2 + 2 seating</strong> — more room, footrest, deep recline.</li>
+          <li><strong>Mobile food/drink service</strong> to the seat.</li>
+          <li>Located in the calm middle of the train.</li>
+          <li>"These seats are comfy… you can have a sleep here."</li>
+        </ul>
+      </div>
+      <div class="card" style="--bgc:var(--blue-wash)">
+        <h3><span class="badge" style="background:var(--blue-wash)">🔵</span> Economy ("S Work")</h3>
+        <ul>
+          <li><strong>3 + 2 seating</strong> — slightly tighter, but still excellent.</li>
+          <li>No seat-side ordering, no extras.</li>
+          <li>"If that's economy, that's not much difference to the Green Car."</li>
+          <li>Same smooth, immaculate ride.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="quote" style="--qc:var(--green); margin-top:20px">
+      <p>If you're booking a bullet train in Japan, just go for the cheapest seat possible — between any of the classes, it's not worth paying more. All the seats are just as good.</p>
+      <div class="who">— The verdict, repeated three times across the trip</div>
+    </div>
+  </section>
+
+  <!-- ============ PEOPLE MET ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-eyebrow">The Human Layer</span>
+      <h2>The strangers who made the journey</h2>
+      <p>Beyond the engineering, the trip's emotional core was the people — locals who walked him to stations, fellow passengers who bought his coffee, and travellers swapping notes across continents.</p>
+    </div>
+    <div class="people">
+      <div class="person" style="--avbg:var(--gold-soft)">
+        <div class="av">🧭</div>
+        <div class="nm">The Tokyo helpers</div>
+        <div class="rl">Strangers · Tokyo</div>
+        <div class="ds">A chain of passers-by who personally walked him toward Tokyo Station as he panicked about missing the train. One fan recognised his travel videos. "What lovely, lovely people."</div>
+      </div>
+      <div class="person" style="--avbg:var(--green-soft)">
+        <div class="av">👨‍👩‍👧‍👦</div>
+        <div class="nm">Yoshinari &amp; family</div>
+        <div class="rl">Investor · Nagoya / Hong Kong</div>
+        <div class="ds">A business-owner investor with four kids (just back from a Hawaii holiday). Shared a beef bento, sweet potato snacks — then bought his coffee and left a rice cake. Got off at Nagoya before he could say goodbye. "Gutted."</div>
+      </div>
+      <div class="person" style="--avbg:var(--blue-wash)">
+        <div class="av">🇬🇧</div>
+        <div class="nm">Nisha &amp; partner</div>
+        <div class="rl">Tourists · London</div>
+        <div class="ds">A London couple on a 14-day Japan trip (Tokyo → Kyoto → Sapporo). They'd booked their seats on the Mount Fuji side specifically — but cloud hid the mountain that day.</div>
+      </div>
+      <div class="person" style="--avbg:var(--red-wash)">
+        <div class="av">🇮🇳🇦🇺</div>
+        <div class="nm">The Sydney traveller</div>
+        <div class="rl">Indian-Australian · Sydney</div>
+        <div class="ds">Met on Train 2, returning to Japan after 12 years, heading to Hiroshima for the history. Bonded over the 10/10 Japanese Pringles. "Safe travels back to Australia."</div>
+      </div>
+      <div class="person" style="--avbg:var(--green-soft)">
+        <div class="av">☕</div>
+        <div class="nm">The crew &amp; staff</div>
+        <div class="rl">Service · On board</div>
+        <div class="ds">Polished, polite, ever-present — delivering mobile orders, checking tickets with a smile. Part of why "everybody is so friendly" became the trip's refrain.</div>
+      </div>
+      <div class="person" style="--avbg:var(--blue-wash)">
+        <div class="av">🍱</div>
+        <div class="nm">The Osaka shopkeeper</div>
+        <div class="rl">Local · Shin-Osaka Station</div>
+        <div class="ds">Steered him to the "number one beef," gently warned the hot items need a microwave, and helped assemble a "Japanese meal deal" for the second leg.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HIGHLIGHTS / QUOTES ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-eyebrow">In His Own Words</span>
+      <h2>The moments that stuck</h2>
+    </div>
+    <div class="quotes">
+      <div class="quote" style="--qc:var(--green)">
+        <p>We left Tokyo at 10:09 on the dot and landed into Osaka at 12:36 on the dot. That train wasn't even a second late.</p>
+        <div class="who">On punctuality · The core finding</div>
+      </div>
+      <div class="quote" style="--qc:var(--blue)">
+        <p>I can't believe how fast this train goes. You haven't even got time to look out the window.</p>
+        <div class="who">On speed</div>
+      </div>
+      <div class="quote" style="--qc:var(--red)">
+        <p>Japan is amazing. The people are great — they won't even let me pay for the coffee.</p>
+        <div class="who">On the kindness of strangers</div>
+      </div>
+      <div class="quote" style="--qc:var(--gold)">
+        <p>I've stayed in rooms on trains smaller than that bathroom. This has almost got its own cart just for toilets.</p>
+        <div class="who">On the facilities</div>
+      </div>
+      <div class="quote" style="--qc:var(--violet)">
+        <p>You can literally live anywhere in Japan. Even at the most southern point, you can get to Osaka in 4 hours, Tokyo in 7.</p>
+        <div class="who">On what the network unlocks</div>
+      </div>
+      <div class="quote" style="--qc:var(--blue)">
+        <p>I just wish there were trains like this in the UK. Super quick, clean, cheap — like £200 for 7 hours.</p>
+        <div class="who">The wistful comparison home</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DID YOU NOTICE (details) ============ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-eyebrow">Small Details, Big Picture</span>
+      <h2>Easy-to-miss observations</h2>
+      <p>The kind of details that reveal a system engineered to its bones.</p>
+    </div>
+    <div class="grid g3">
+      <div class="card" style="--bgc:var(--blue-wash)">
+        <h3><span class="badge" style="background:var(--blue-wash)">➡️</span> Every seat faces forward</h3>
+        <ul><li>On the entire 16-carriage train, <strong>not one seat faced backward</strong> — the whole cabin is turned to face the direction of travel.</li></ul>
+      </div>
+      <div class="card" style="--bgc:var(--gold-soft)">
+        <h3><span class="badge" style="background:var(--gold-soft)">🗺️</span> A map on the wall</h3>
+        <ul><li>Each carriage carries a printed diagram of the train showing all 16 cars and which are Green — easy orientation when your seat is six cars away.</li></ul>
+      </div>
+      <div class="card" style="--bgc:var(--red-wash)">
+        <h3><span class="badge" style="background:var(--red-wash)">🌸</span> Cherry blossom timing</h3>
+        <ul><li>The trip coincided with full bloom — "the cherry blossoms in Japan are out, how amazing do they look?" — even glimpsed while sprinting to the station.</li></ul>
+      </div>
+      <div class="card" style="--bgc:var(--green-soft)">
+        <h3><span class="badge" style="background:var(--green-soft)">🏔️</span> The missed Mount Fuji</h3>
+        <ul><li>The London couple booked the Fuji-facing side of the train on purpose — but cloud cover hid it. A reminder that the view is weather's gamble.</li></ul>
+      </div>
+      <div class="card" style="--bgc:var(--blue-wash)">
+        <h3><span class="badge" style="background:var(--blue-wash)">🤢</span> Too fast to watch</h3>
+        <ul><li>Looking out the side window at full speed "makes you feel ill" — the scenery whips past faster than the eye can track.</li></ul>
+      </div>
+      <div class="card" style="--bgc:var(--gold-soft)">
+        <h3><span class="badge" style="background:var(--gold-soft)">🍜</span> Nagoya's miso katsu</h3>
+        <ul><li>A passenger insisted Nagoya — otherwise dismissed as a "nothing" middle city — is worth stopping for its miso-katsu "soul food."</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VERDICT ============ -->
+  <section>
+    <div class="verdict">
+      <span class="ve">The Verdict</span>
+      <h2>Highly efficient, immaculate, comfortable — and cheaper than flying.</h2>
+      <p>Across 1,400 km and 7 hours, the Japanese bullet train delivered on every promise: never a second late, spotless from polished floor to heated toilet seat, and full of remarkably kind people. The only knock — there's "not too much to do" on board; no cafe car, just your seat and the country streaming by. The takeaway: book the cheapest seat, leave plenty of time to find the platform, and let the train do what planes can't here — get you anywhere in Japan, on time, for the price of a budget flight.</p>
+      <div class="vscore">
+        <div class="vs"><b>1,400 km</b><span>covered in one day</span></div>
+        <div class="vs"><b>0 sec</b><span>total delay</span></div>
+        <div class="vs"><b>£200</b><span>all-in fare</span></div>
+        <div class="vs"><b>9.3/10</b><span>overall experience</span></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span class="fr">🚄 Tokyo → Kagoshima · Shinkansen Field Report</span>
+    <p style="margin-top:8px">Visual brief generated from the journey transcript · all figures and quotes drawn directly from the source.</p>
+  </footer>
+
+</div>
+</body>
+</html>
