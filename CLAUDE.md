@@ -11,10 +11,10 @@ Guidance for Claude Code (claude.ai/code) when working in this repository.
 A toolkit that turns raw text / transcripts into Markdown (and one HTML) artifacts, three ways:
 
 - **`smart_transcript.py`** — single-file CLI, two runnable modes: `organize` (faithful word-preserving reformat, has an offline fallback) and `speaking` (verbatim spoken lines + generated **Recap** paragraphs; **LLM-required**, no fallback).
-- **`.claude/agents/*.md`** — nine Claude Code subagents (see routing table below).
+- **`.claude/agents/*.md`** — ten Claude Code subagents (see routing table below).
 - **`webui/server.py`** — local browser UI that runs the agent prompts via the `claude` CLI.
 
-> Three surfaces have **different counts**: CLI = **2 modes**; agents = **9**; web UI = **8** (debate-prep is missing from `MODE_SUFFIX` — see PROJECT-OVERVIEW.md). Don't conflate them.
+> Three surfaces have **different counts**: CLI = **2 modes**; agents = **10**; web UI = **9** (debate-prep is still missing from `MODE_SUFFIX` — see PROJECT-OVERVIEW.md). Don't conflate them.
 
 ## Running
 
@@ -49,7 +49,7 @@ Smoke tests and the full validation block are in [PROJECT-OVERVIEW.md](PROJECT-O
 
 ## Agent routing — automatic dispatch
 
-Nine subagents live in `.claude/agents/`. When the user references a transcript or text file and asks for one of these, **always invoke the matching agent automatically** — do not ask which one. Pass the full file content in the prompt; the agent writes its own output file using the suffix shown.
+Ten subagents live in `.claude/agents/`. When the user references a transcript or text file and asks for one of these, **always invoke the matching agent automatically** — do not ask which one. Pass the full file content in the prompt; the agent writes its own output file using the suffix shown.
 
 | Trigger | Agent | Output suffix |
 | --- | --- | --- |
@@ -58,12 +58,15 @@ Nine subagents live in `.claude/agents/`. When the user references a transcript 
 | "organize", "format", "clean up", "make this Markdown", "reformat" | `organize` | `-organized.md` |
 | "roleplay", "practice one side of this conversation", "two-person script", "rehearse turn-taking" | `roleplay` | `-roleplay.md` |
 | "travel guide", "how do they get around", "what do I need to know about this place" | `travel-guide` | `-travel-guide.md` |
-| "infographic", "visualize", "HTML visual", "make a graphic", "visual summary" | `infographic` | `-infographic.html` |
+| "infographic", "visualize", "HTML visual", "make a graphic", "visual summary" (offline, CSS-only, no JS) | `infographic` | `-infographic.html` |
+| "immersive", "interactive experience", "3D", "scrollytelling", "cinematic", "premium visual", "data-driven storytelling", "NYT/Apple/Nat Geo style", "make this extraordinary" | `infographic-advanced` | `-infographic-advanced.html` |
 | "document this course", "course notes", "follow-along guide", "course cheatsheet", "reference doc from this tutorial" | `course-docs` | `-course-docs.md` |
 | "help me practice English", "give me sentences to repeat", "what can I say from this video", "tense practice" | `passive-to-active-english` | `-speaking-practice.md` |
 | "debate prep", "argue this", "for and against", "practice arguing", "defend a position", "steelman" | `debate-prep` | `-debate-prep.md` |
 
 `passive-to-active-english` does tense drilling + phrase practice (Recaps → 4 first-person tenses → Phrases + Fill-in-the-Blank), **not** verbatim line extraction — use `speaking` for that.
+
+`infographic` vs `infographic-advanced`: both produce one HTML file, but `infographic` is **offline, CSS-only, no JavaScript, zero dependencies** (works fully offline / print-friendly); `infographic-advanced` is the **immersive, library-powered** version (Three.js + D3 + GSAP + MapLibre/Deck.gl) and **needs internet on first open** for CDN libraries + map tiles. Pick `infographic-advanced` for "immersive / interactive / 3D / cinematic / premium"; pick `infographic` when offline-self-contained matters.
 
 ## Dependencies
 

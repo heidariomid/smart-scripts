@@ -11,7 +11,7 @@ deep reference behind those rules.
 A small toolkit for turning **raw text and video/podcast transcripts into useful Markdown (and one HTML) artifacts**, exposed three ways:
 
 1. **`smart_transcript.py`** — a single-file CLI with two runnable modes (`organize`, `speaking`).
-2. **`.claude/agents/*.md`** — nine specialized Claude Code subagents, auto-dispatched by intent, each producing a different artifact from the same kind of input.
+2. **`.claude/agents/*.md`** — ten specialized Claude Code subagents, auto-dispatched by intent, each producing a different artifact from the same kind of input.
 3. **`webui/server.py`** — a local browser UI that runs the agent prompts through the `claude` CLI and saves the output to your Desktop.
 
 All three share the same philosophy: faithful, maximum-depth transformation of the source — never a thin summary (except the deliberately-tight `summary` agent).
@@ -23,8 +23,8 @@ This trips people up, so be precise:
 | Surface | Count | Members |
 | --- | --- | --- |
 | `smart_transcript.py` `--mode` | **2** | `organize`, `speaking` only |
-| `.claude/agents/` (Claude Code) | **9** | summary, speaking, organize, roleplay, travel-guide, infographic, course-docs, passive-to-active-english, debate-prep |
-| `webui` `MODE_SUFFIX` (browser) | **8** | all agents **except `debate-prep`** (see Known gaps) |
+| `.claude/agents/` (Claude Code) | **10** | summary, speaking, organize, roleplay, travel-guide, infographic, infographic-advanced, course-docs, passive-to-active-english, debate-prep |
+| `webui` `MODE_SUFFIX` (browser) | **9** | all agents **except `debate-prep`** (see Known gaps) |
 
 The CLI only knows two modes; the other seven artifacts exist **only** as Claude Code agents / web-UI modes, not as `--mode` choices.
 
@@ -38,13 +38,14 @@ smart-scripts/
 ├── CLAUDE.md                  # lean operating rules, auto-loaded every session
 ├── PROJECT-OVERVIEW.md        # this file — deep reference
 ├── .claude/
-│   └── agents/                # 9 agent prompt files + README.md
+│   └── agents/                # 10 agent prompt files + README.md
 │       ├── summary.md
 │       ├── speaking.md
 │       ├── organize.md
 │       ├── roleplay.md
 │       ├── travel-guide.md
-│       ├── infographic.md     # the GOLD-STANDARD depth/structure prompt
+│       ├── infographic.md     # the GOLD-STANDARD depth/structure prompt (offline, CSS-only)
+│       ├── infographic-advanced.md  # advanced: immersive, library-powered interactive HTML
 │       ├── course-docs.md
 │       ├── passive-to-active-english.md
 │       └── debate-prep.md
@@ -98,7 +99,8 @@ Nine subagents, each a Markdown file with YAML frontmatter (`name`, `description
 | `organize` | `-organized.md` | Faithful, word-preserving Markdown reformat. |
 | `roleplay` | `-roleplay.md` | Two-sided You/Partner practice script. |
 | `travel-guide` | `-travel-guide.md` | Practical travel briefing. **Three-tier structure** (From the video / Added context / Suggested itinerary) — diverges from the others by design. |
-| `infographic` | `-infographic.html` | Self-contained HTML infographic. **The gold-standard prompt** the others are modeled on. |
+| `infographic` | `-infographic.html` | Self-contained, **offline, CSS-only, no-JS** HTML infographic. **The gold-standard prompt** the others are modeled on. |
+| `infographic-advanced` | `-infographic-advanced.html` | Immersive, **library-powered** interactive HTML experience (Three.js + D3 + GSAP + MapLibre/Deck.gl). The advanced counterpart to `infographic` — **needs internet on first open** for CDN libs + map tiles. |
 | `course-docs` | `-course-docs.md` | Engineering-documentation-quality reference from a course transcript. |
 | `passive-to-active-english` | `-speaking-practice.md` | Tense drilling + phrase practice (Recap → 4 first-person tenses → Phrases + Fill-in-the-Blank). No verbatim lines. |
 | `debate-prep` | `-debate-prep.md` | For / Against / Nuanced argument positions + Steelman + vocabulary. |

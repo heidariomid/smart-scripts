@@ -46,6 +46,7 @@ MODE_SUFFIX = {
     "roleplay": "-roleplay.md",
     "travel-guide": "-travel-guide.md",
     "infographic": "-infographic.html",
+    "infographic-advanced": "-infographic-advanced.html",
     "course-docs": "-course-docs.md",
     "passive-to-active-english": "-speaking-practice.md",
 }
@@ -242,7 +243,7 @@ def output_name_for(input_name: str, mode: str) -> str:
     # file doesn't accumulate suffixes (e.g. "foo-speaking-roleplay").
     known_suffixes = [
         "-organized", "-formatted", "-speaking", "-summary", "-roleplay",
-        "-travel-guide", "-infographic", "-course-docs", "-speaking-practice",
+        "-travel-guide", "-infographic-advanced", "-infographic", "-course-docs", "-speaking-practice",
     ]
     # Also handle bare mode-word stems (e.g. input file named "organized.md")
     bare_mode_words = {s.lstrip("-") for s in known_suffixes}

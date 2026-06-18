@@ -15,6 +15,8 @@ proven here, port it into `smart_transcript.py --mode <name>` (CLI + batch). Ref
 | `roleplay` | Two-sided **You / Partner** script from real dialogue, to practice speaking one side. |
 | `summary` | One tight third-person spoken summary of the whole video. |
 | `debate-prep` | For / Against / Nuanced argument positions + Steelman block + Key Vocabulary — for practicing spoken argumentation on news, opinion, or tech topics. |
+| `infographic` | Self-contained, **offline / CSS-only / no-JS** HTML infographic — visual cards, stat callouts, timelines, color sections. The gold-standard depth prompt. |
+| `infographic-advanced` | Immersive, **library-powered** interactive HTML experience (Three.js + D3 + GSAP + MapLibre/Deck.gl). The advanced counterpart to `infographic`; **needs internet on first open** for CDN libs + map tiles. |
 
 ## TODO — future modes (not built yet)
 
