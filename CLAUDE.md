@@ -16,8 +16,15 @@ the infographics). There are **two surfaces**, and they share one prompt source:
 that file's body as the LLM prompt; Claude Code uses the same file as a subagent definition. There
 is no separate skills layer and no CLI — don't reintroduce prompt duplication.
 
-> The web UI exposes **9** of the 10 agents — `debate-prep` is missing from `MODE_SUFFIX` in
-> [webui/server.py](webui/server.py). Add it there if you want it in the UI.
+> The web UI exposes **9** of the 10 transcript→artifact agents — `debate-prep` is missing from
+> `MODE_SUFFIX` in [webui/server.py](webui/server.py). Add it there if you want it in the UI.
+
+> **Non-UI meta-agent:** [.claude/agents/agent-reviewer.md](.claude/agents/agent-reviewer.md) is a
+> deliberate exception to the "every agent is a transcript→artifact transformer" rule. Its input is
+> *another agent's prompt*, and it reviews that prompt for product quality. It is **intentionally not
+> in `MODE_SUFFIX`** (nothing to drop a file into) — invoke it only inside Claude Code, e.g. "review
+> the travel-guide agent." It writes a structured report to `reviews/<agent>-review.md` (e.g.
+> `reviews/speaking-review.md`). Don't wire it into the web UI or the routing table below.
 
 ## Running the web UI
 
