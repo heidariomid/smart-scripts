@@ -1,35 +1,38 @@
-# Transcript mode agents
+# Transcript agents
 
-Claude Code subagents that process a transcript into a specific kind of output. Share a transcript
-(or point at `sub.txt`) and invoke the agent — e.g. `@"travel-guide (agent)"`.
+Claude Code subagents that turn a transcript into a specific kind of output. Share a transcript and
+invoke the agent — e.g. `@"travel-guide (agent)"` — or just ask in plain language and the right one
+is dispatched automatically (routing table in [../../CLAUDE.md](../../CLAUDE.md)).
 
-These agents are also the **design home** for future `smart_transcript.py` modes: once a prompt is
-proven here, port it into `smart_transcript.py --mode <name>` (CLI + batch). Refactor to a
-`MODES = {...}` registry dict *before* adding many Python modes to avoid touching 5 places per mode.
+Each agent's `.md` file is the single source of truth for its prompt: the same file backs both
+Claude Code and the web UI ([../../webui/server.py](../../webui/server.py)).
 
-## Built (this batch)
+## Agents
 
 | Agent | What it produces |
 | --- | --- |
-| `travel-guide` | Practical travel briefing — two tiers: facts from the video + clearly-labeled added context (geographic anchors, Google Maps links). |
+| `summary` | One tight third-person spoken summary of the whole transcript. |
+| `organize` | Faithful Markdown reformat — preserves every word. |
+| `speaking` | Verbatim high-value spoken lines per scene + Recap paragraphs to read aloud. |
+| `passive-to-active-english` | Scene Recaps + a Tense Focus Practice block (natural re-tellings in purpose-labeled time frames) + Phrases Worth Reviewing + Fill-in-the-Blank. |
 | `roleplay` | Two-sided **You / Partner** script from real dialogue, to practice speaking one side. |
-| `summary` | One tight third-person spoken summary of the whole video. |
-| `debate-prep` | For / Against / Nuanced argument positions + Steelman block + Key Vocabulary — for practicing spoken argumentation on news, opinion, or tech topics. |
+| `debate-prep` | For / Against / Nuanced argument positions + Steelman block + Key Vocabulary. |
+| `travel-guide` | Practical travel briefing — facts from the video + clearly-labeled added context (geographic anchors, Google Maps links). |
+| `course-docs` | Engineering-quality reference doc from a course/tutorial transcript. |
 | `infographic` | Self-contained, **offline / CSS-only / no-JS** HTML infographic — visual cards, stat callouts, timelines, color sections. The gold-standard depth prompt. |
-| `infographic-advanced` | Immersive, **library-powered** interactive HTML experience (Three.js + D3 + GSAP + MapLibre/Deck.gl). The advanced counterpart to `infographic`; **needs internet on first open** for CDN libs + map tiles. |
+| `infographic-advanced` | Immersive, **library-powered** interactive HTML (Three.js + D3 + GSAP + MapLibre/Deck.gl). **Needs internet on first open** for CDN libs + map tiles. |
 
-## TODO — future modes (not built yet)
+## Ideas — not built yet
 
-| Mode | Idea | Verbatim or generated |
+| Idea | What it would do | Verbatim or generated |
 | --- | --- | --- |
 | `qa` | Generated open questions about the content for unscripted self-talk practice. | Generated |
 | `vocab-in-context` | Reusable expressions/idioms kept **with** the sentence they appeared in. | Mostly verbatim |
-| `shadowing` | Transcript re-chunked into speaker-natural pieces with pause markers for repeat-aloud. | Verbatim (could run offline) |
+| `shadowing` | Transcript re-chunked into speaker-natural pieces with pause markers for repeat-aloud. | Verbatim |
 
 ## Notes
 
-- These overlap conceptually with `smart_transcript.py` (`organize`, `speaking`) and the
-  `passive-to-active-english` skill. They are intentionally separate for now; porting is future work
-  (accepted duplication).
-- Each agent omits the `tools:` field, so it inherits all tools (travel-guide needs web search/fetch
-  for Maps links and place verification).
+- Most agents omit the `tools:` field and inherit all tools. `travel-guide` needs web search/fetch
+  for Maps links and place verification. In the web UI, write tools are disabled regardless — see
+  `MODE_TOOLS` in the server.
+- `debate-prep` is the one agent not yet wired into the web UI (missing from `MODE_SUFFIX`).

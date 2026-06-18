@@ -2,54 +2,73 @@
 
 Guidance for Claude Code (claude.ai/code) when working in this repository.
 
-> **Full picture:** [PROJECT-OVERVIEW.md](PROJECT-OVERVIEW.md) — architecture, web-UI internals, the
-> agent depth-standard, how to add a mode/agent, validation, and the cleanup backlog. Read it before
-> any non-trivial change. This file is the short list of must-follow rules.
-
 ## What this is
 
-A toolkit that turns raw text / transcripts into Markdown (and one HTML) artifacts, three ways:
+A toolkit that turns a raw transcript or text file into a structured artifact (Markdown, or HTML for
+the infographics). There are **two surfaces**, and they share one prompt source:
 
-- **`smart_transcript.py`** — single-file CLI, two runnable modes: `organize` (faithful word-preserving reformat, has an offline fallback) and `speaking` (verbatim spoken lines + generated **Recap** paragraphs; **LLM-required**, no fallback).
-- **`.claude/agents/*.md`** — ten Claude Code subagents (see routing table below).
-- **`webui/server.py`** — local browser UI that runs the agent prompts via the `claude` CLI.
+- **Claude Code agents** — `.claude/agents/*.md`. Share a transcript here and ask for one of the
+  outputs below; the matching subagent runs and writes the file. (See the routing table.)
+- **Web UI** — `webui/server.py`. A local browser app: drop a file, pick an agent + model, click
+  Run. Output saves to `~/Desktop`.
 
-> Three surfaces have **different counts**: CLI = **2 modes**; agents = **10**; web UI = **9** (debate-prep is still missing from `MODE_SUFFIX` — see PROJECT-OVERVIEW.md). Don't conflate them.
+**Single source of truth:** every agent is one file, `.claude/agents/<name>.md`. The web UI reads
+that file's body as the LLM prompt; Claude Code uses the same file as a subagent definition. There
+is no separate skills layer and no CLI — don't reintroduce prompt duplication.
 
-## Running
+> The web UI exposes **9** of the 10 agents — `debate-prep` is missing from `MODE_SUFFIX` in
+> [webui/server.py](webui/server.py). Add it there if you want it in the UI.
+
+## Running the web UI
 
 ```bash
-# CLI (LLM engine, default)
-python3 smart_transcript.py --input notes.txt --output out.md
-python3 smart_transcript.py --input notes.txt --output out.md --no-llm   # offline, organize only
-python3 smart_transcript.py --mode speaking --input sub.txt --output speaking.md   # ~90s, needs claude CLI
-
-# Batch — ALWAYS add --source-glob "*.txt" in speaking mode (see pitfalls)
-python3 smart_transcript.py --mode speaking --all . --source-glob "*.txt" --dry-run
-
-# Web UI
 python3 webui/server.py   # http://127.0.0.1:8765 ; outputs save to ~/Desktop
+# or: make dev  (kills any process on :8765 first, then starts)
 ```
 
-Smoke tests and the full validation block are in [PROJECT-OVERVIEW.md](PROJECT-OVERVIEW.md).
+After editing `server.py`, **restart it** — Python caches the old code in memory:
+`lsof -ti tcp:8765 | xargs kill -9 && python3 webui/server.py`.
 
-## Critical sync requirements
+## Editing agent prompts — the sanitizer rule
 
-- **Two script copies.** Canonical: `~/bin/smart_transcript.py`. The repo copy can drift. After any edit, sync both: `cp ~/bin/smart_transcript.py ./smart_transcript.py` (or reverse). The `~/bin` copy is outside git — commits don't carry it.
-- **Spec duplication.** `SPEAKING_PROMPT` in the script and `.claude/agents/speaking.md` both define the speaking spec. **Edit both together** — nothing enforces this.
-- After editing `webui/server.py`, **restart it** (Python caches the old code): `lsof -ti tcp:8765 | xargs kill -9 && python3 webui/server.py`.
-- After editing any agent prompt, run the **sanitizer self-check** (in PROJECT-OVERVIEW.md): keep any file-writing instruction on its own line and never let a content line match `_WRITE_LINE_RE`.
+The web UI strips "write the file yourself" instructions from each prompt (`sanitize_prompt()` in
+[webui/server.py](webui/server.py)) because the server captures stdout and writes the file itself.
+So when you edit an agent:
 
-## Common pitfalls
+- Keep any file-writing instruction on its **own line** so it strips cleanly.
+- Never let a normal content line accidentally match `_WRITE_LINE_RE` (patterns: "write it / the
+  file / the html / directly", "with the write tool", "then confirm the path").
 
-- `--all` batch in speaking mode with the default `--source-glob "*.txt,*.md"` re-ingests its own `*-speaking.md` outputs. Always pass `--source-glob "*.txt"`.
-- `--mode speaking --no-llm` is intentionally an error — do **not** add an offline fallback; regex can't judge speaking value.
-- `argparse` "file modified since read" errors when iterating fast — re-Read before each Edit.
-- The web UI **ignores** each agent's `model:` frontmatter — the UI dropdown's `--model` is what runs. Frontmatter `model:` only applies inside Claude Code.
+Self-check after editing an agent (`AGENT_NAME` = the file stem):
+
+```bash
+python3 -c "import sys; sys.path.insert(0,'webui'); import server; \
+ p=server.sanitize_prompt(server.load_prompt('AGENT_NAME')); \
+ assert 'with the Write tool' not in p and 'then confirm the path' not in p; \
+ print('AGENT_NAME sanitizes clean')"
+```
+
+## Other notes
+
+- The web UI **ignores** each agent's `model:` frontmatter — the UI dropdown's `--model` is what
+  runs. Frontmatter `model:` only applies inside Claude Code.
+- The model runs with **no write tools** (`--tools ""` + denied Write/Edit/Bash); it returns text on
+  stdout and the server does all file writing. The one exception is read-only web access for agents
+  that need it — see `MODE_TOOLS` (currently just `travel-guide` → `WebSearch,WebFetch`).
+
+## Adding a new agent
+
+1. Create `.claude/agents/<name>.md` (frontmatter `name:` must equal the filename stem; `description:`
+   is shown in the UI dropdown and drives Claude Code routing).
+2. To expose it in the web UI, add one entry to `MODE_SUFFIX` in [webui/server.py](webui/server.py):
+   `"<name>": "-<suffix>.md"` (or `.html`). The server auto-discovers the prompt file; no other
+   server change is needed.
 
 ## Agent routing — automatic dispatch
 
-Ten subagents live in `.claude/agents/`. When the user references a transcript or text file and asks for one of these, **always invoke the matching agent automatically** — do not ask which one. Pass the full file content in the prompt; the agent writes its own output file using the suffix shown.
+When the user references a transcript or text file and asks for one of these, **invoke the matching
+agent automatically** — do not ask which one. Pass the full file content in the prompt; the agent
+writes its own output file using the suffix shown.
 
 | Trigger | Agent | Output suffix |
 | --- | --- | --- |
@@ -64,13 +83,19 @@ Ten subagents live in `.claude/agents/`. When the user references a transcript o
 | "help me practice English", "give me sentences to repeat", "what can I say from this video", "tense practice" | `passive-to-active-english` | `-speaking-practice.md` |
 | "debate prep", "argue this", "for and against", "practice arguing", "defend a position", "steelman" | `debate-prep` | `-debate-prep.md` |
 
-`passive-to-active-english` does tense drilling + phrase practice (Recaps → 4 first-person tenses → Phrases + Fill-in-the-Blank), **not** verbatim line extraction — use `speaking` for that.
+`passive-to-active-english` does tense-focus + phrase practice (Recaps → a Tense Focus Practice block
+that re-tells each scene *naturally* in purpose-labeled time frames → Phrases + Fill-in-the-Blank),
+**not** verbatim line extraction — use `speaking` for that.
 
-`infographic` vs `infographic-advanced`: both produce one HTML file, but `infographic` is **offline, CSS-only, no JavaScript, zero dependencies** (works fully offline / print-friendly); `infographic-advanced` is the **immersive, library-powered** version (Three.js + D3 + GSAP + MapLibre/Deck.gl) and **needs internet on first open** for CDN libraries + map tiles. Pick `infographic-advanced` for "immersive / interactive / 3D / cinematic / premium"; pick `infographic` when offline-self-contained matters.
+`infographic` vs `infographic-advanced`: both produce one HTML file, but `infographic` is **offline,
+CSS-only, no JavaScript, zero dependencies** (works fully offline / print-friendly); `infographic-advanced`
+is the **immersive, library-powered** version (Three.js + D3 + GSAP + MapLibre/Deck.gl) and **needs
+internet on first open** for CDN libraries + map tiles. Pick `infographic-advanced` for "immersive /
+interactive / 3D / cinematic / premium"; pick `infographic` when offline-self-contained matters.
 
 ## Dependencies
 
 | Dependency | Required for |
 | --- | --- |
-| Python 3.10+ | Everything |
-| `claude` CLI (logged in) | LLM engine (default) + web UI. Install: `npm install -g @anthropic-ai/claude-code` |
+| Python 3.10+ | Running the web UI |
+| `claude` CLI (logged in) | The LLM engine behind the web UI. Install: `npm install -g @anthropic-ai/claude-code` |

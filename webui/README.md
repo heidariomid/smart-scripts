@@ -31,9 +31,12 @@ code in memory: `lsof -ti tcp:8765 | xargs kill -9` then re-run.
 ## Notes
 
 - **Zero dependencies** — pure Python standard library. Requires the `claude` CLI on PATH and
-  logged in (same requirement as `smart_transcript.py`'s LLM engine).
+  logged in.
 - Agents are discovered automatically from `.claude/agents/*.md`; prompts are read verbatim from
-  those files, so nothing is duplicated.
-- Output suffixes: `-organized.md` (`-formatted.md` for `.md` input), `-speaking.md`,
-  `-summary.md`, `-roleplay.md`, `-travel-guide.md`, `-infographic.html`.
-- `infographic` and `travel-guide` are the slowest modes; the server uses a 480s LLM timeout.
+  those files, so the web UI and Claude Code share one source of truth.
+- Output suffixes come from `MODE_SUFFIX` in `server.py`: `-organized.md` (`-formatted.md` for `.md`
+  input), `-speaking.md`, `-summary.md`, `-roleplay.md`, `-travel-guide.md`, `-course-docs.md`,
+  `-speaking-practice.md`, `-infographic.html`, `-infographic-advanced.html`. (`debate-prep` is not
+  wired into the UI yet.)
+- `infographic` / `infographic-advanced` and `travel-guide` are the slowest modes; the server uses a
+  480s LLM timeout.

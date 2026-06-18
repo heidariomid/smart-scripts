@@ -160,7 +160,7 @@ def clean_transcript(raw: str, ext: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# LLM invocation (mirrors smart_transcript.py organize_with_llm)
+# LLM invocation
 # ---------------------------------------------------------------------------
 
 # Some agent prompts (e.g. infographic) tell the model to WRITE its output to a

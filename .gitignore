@@ -1,9 +1,10 @@
-sub.txt
+# macOS
+.DS_Store
 
-# Python build/cache junk
+# Python cache
 __pycache__/
 *.pyc
 
-# ignore source folder
+# scratch transcripts
 source/
-/src
+sub.txt
