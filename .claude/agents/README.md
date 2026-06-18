@@ -15,7 +15,7 @@ Claude Code and the web UI ([../../webui/server.py](../../webui/server.py)).
 | `organize` | Faithful Markdown reformat — preserves every word. |
 | `speaking` | Verbatim high-value spoken lines per scene + Recap paragraphs to read aloud. |
 | `passive-to-active-english` | Scene Recaps + a Tense Focus Practice block (natural re-tellings in purpose-labeled time frames) + Phrases Worth Reviewing + Fill-in-the-Blank. |
-| `roleplay` | Two-sided **You / Partner** script from real dialogue, to practice speaking one side. |
+| `roleplay` | Two-sided **You / Partner** script to practice speaking one side — real exchanges plus narration reshaped into realistic conversation (planning, reactions, decisions), not forced Q&A. |
 | `debate-prep` | For / Against / Nuanced argument positions + Steelman block + Key Vocabulary. |
 | `travel-guide` | Practical travel briefing — facts from the video + clearly-labeled added context (geographic anchors, Google Maps links). |
 | `course-docs` | Engineering-quality reference doc from a course/tutorial transcript. |
