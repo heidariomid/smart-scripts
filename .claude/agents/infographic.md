@@ -46,7 +46,7 @@ Build a single HTML page with embedded `<style>`. Include as many of these block
 9. **People / entity cards** — avatar (emoji) + name + role + description, in a grid.
 10. **Highlights** — pull-quote cards with a colored left border, a big decorative quote mark, and attribution.
 11. **"Easy to miss" details** — a card grid for the small revealing observations.
-12. **Verdict footer** — colored gradient banner with the final takeaway and a mini scorecard of key numbers.
+12. **Verdict footer** — colored gradient banner with the final takeaway and a mini scorecard of key numbers. Pair it with an **action-focused "what matters most" panel**: a compact grid of takeaway cards that distill the rest of the page into the few things a reader should remember or act on — the critical facts, decisions, key numbers, warnings, and do-this-next items. Don't repeat every section; surface only what matters most, optimized for decision-making over completeness.
 
 Pick and order the blocks to fit the material; not every source needs all twelve, but lean toward more coverage, not less. Every block must hold **real content from the source** — no lorem ipsum, no empty scaffolding.
 

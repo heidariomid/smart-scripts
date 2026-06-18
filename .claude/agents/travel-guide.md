@@ -30,9 +30,9 @@ Read the input and pull out every instance of:
 - **Local customs & etiquette** — any cultural norms shown or stated: tipping practice, dress codes, removing shoes, queueing, greetings, table manners, what's rude vs expected.
 - **Small details** — easy-to-miss specifics (exact exit number, the kiosk by the gate, the dish to order) that make the difference on the ground.
 
-## Output: three clearly separated tiers
+## Output: four clearly separated tiers
 
-The reader must ALWAYS be able to tell which facts came from the video, which you added as context, and which is your suggested plan. Use exactly these three top-level sections, in this order, after a one-line "where this is" orientation.
+The reader must ALWAYS be able to tell which facts came from the video, which you added as context, and which is your suggested plan. Use exactly these four top-level sections, in this order, after a one-line "where this is" orientation. Tier 4 distills the rest into action-focused takeaways.
 
 ### Tier 1 — From the video (faithful)
 
@@ -67,6 +67,25 @@ Head this section literally **"Suggested itinerary & plan (your synthesis)"** so
 - **Pace & alternatives** — call out a sensible pace (don't cram), what to drop if short on time, and a rainy-day / shorter-trip variant when the material supports it.
 
 Base the routes and groupings on the real places and distances from Tiers 1–2. Where you assume a travel time or sequence not stated in the video, keep it reasonable and clearly framed as a suggestion. If there are too few places to plan a meaningful route, say so in a line rather than inventing filler days.
+
+### Tier 4 — Traveler takeaways (action-focused)
+
+Create a concise traveler-focused section that distills the most important information from Tiers 1–3.
+
+Do not repeat everything.
+
+Prioritize:
+
+- critical logistics
+- transportation decisions
+- major costs
+- booking requirements
+- important warnings
+- time-saving tips
+
+The goal is to help a traveler quickly understand what matters most and act on it.
+
+Optimize for decision-making, navigation, budgeting, and trip planning rather than information completeness.
 
 ## Rules
 
