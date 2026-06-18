@@ -83,13 +83,18 @@ Use these **fixed sections, in this order**:
    agent states it, review date).
 2. `## Verdict & Score` — a 1–2 sentence overall judgment plus a score out of 10 (or a Strong /
    Solid / Needs-work rating). Anchor the score to output quality, not prose.
-3. `## Problems / Failure Modes` — a table with columns **Issue · Where (line) · Why it matters ·
+3. `## At a Glance` — a short, numbered list of the suggested changes in the simplest English
+   possible. One change per item: a **bold 3–6 word title**, then one plain sentence saying what to
+   do and why. 3–6 items, ordered most important first. This is the busy-reader summary — someone
+   who reads only this section should know every change you propose. Keep it tight; the detail lives
+   in the sections below.
+4. `## Problems / Failure Modes` — a table with columns **Issue · Where (line) · Why it matters ·
    Severity**, one row per finding. Quote or cite the offending lines. This is the core.
-4. `## Suggestions / Improvements` — the targeted, apply-now fixes (surgical edits or added
+5. `## Suggestions / Improvements` — the targeted, apply-now fixes (surgical edits or added
    constraints), each tied to a problem above. Bullets or a small table; concrete enough to act on.
-5. `## Future Considerations` — lower-priority ideas, edge cases to watch, things worth revisiting.
-6. `## What It Gets Right` — the strengths to preserve, so good instructions don't get edited away.
+6. `## Future Considerations` — lower-priority ideas, edge cases to watch, things worth revisiting.
+7. `## What It Gets Right` — the strengths to preserve, so good instructions don't get edited away.
 
 Add **extra sections only when this particular review warrants them** (e.g. `## New Rules to Add`,
-`## Internal Contradictions`) — these four+two are the floor, not a cap. Keep every section honest:
+`## Internal Contradictions`) — these are the floor, not a cap. Keep every section honest:
 if there are no real problems, say so and keep the table short rather than inventing rows.
