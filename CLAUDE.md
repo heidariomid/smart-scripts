@@ -9,8 +9,9 @@ the infographics). There are **two surfaces**, and they share one prompt source:
 
 - **Claude Code agents** — `.claude/agents/*.md`. Share a transcript here and ask for one of the
   outputs below; the matching subagent runs and writes the file. (See the routing table.)
-- **Web UI** — `webui/server.py`. A local browser app: drop a file, pick an agent + model, click
-  Run. Output saves to `~/Desktop`.
+- **Web UI** — `webui/server.py`. A local browser app: drop a file, pick **one or more agents** +
+  model, click Run. Selected agents run in parallel (bounded by `MAX_PARALLEL`), each writing its own
+  output file to `~/Desktop`.
 
 **Single source of truth:** every agent is one file, `.claude/agents/<name>.md`. The web UI reads
 that file's body as the LLM prompt; Claude Code uses the same file as a subagent definition. There

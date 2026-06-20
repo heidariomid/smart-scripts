@@ -110,6 +110,56 @@
         min-height: 18px;
         margin-top: 6px;
       }
+      .agentsHead {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+      .linkbtn {
+        width: auto;
+        background: none;
+        border: none;
+        color: var(--accent);
+        padding: 0;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .agentList {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .agentList label.chip {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        padding: 9px 11px;
+        background: #20242d;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--fg);
+        font-size: 14px;
+        cursor: pointer;
+        transition: 0.12s;
+      }
+      .agentList label.chip:hover {
+        border-color: var(--muted);
+      }
+      .agentList label.chip.on {
+        border-color: var(--accent);
+        background: rgba(237, 107, 14, 0.08);
+      }
+      .agentList input {
+        width: auto;
+        accent-color: var(--accent);
+        margin: 0;
+      }
+      @media (max-width: 560px) {
+        .agentList {
+          grid-template-columns: 1fr;
+        }
+      }
       button.run {
         margin-top: 18px;
         background: var(--accent);
@@ -201,11 +251,13 @@
         </div>
         <input type="file" id="fileInput" hidden />
 
+        <div class="agentsHead">
+          <label style="margin: 16px 0 6px">Agents <span style="opacity: 0.6">(pick one or more)</span></label>
+          <button type="button" class="linkbtn" id="toggleAll">Select all</button>
+        </div>
+        <div class="agentList" id="agentList"></div>
+
         <div class="row">
-          <div>
-            <label for="mode">Agent</label>
-            <select id="mode"></select>
-          </div>
           <div>
             <label for="model">Model</label>
             <select id="model"></select>
@@ -215,7 +267,6 @@
             <select id="effort"></select>
           </div>
         </div>
-        <div class="desc" id="modeDesc"></div>
 
         <label for="extra">Extra instructions <span style="opacity: 0.6">(optional)</span></label>
         <textarea
@@ -229,11 +280,7 @@
         <div class="status" id="status"></div>
       </div>
 
-      <div class="panel result" id="result">
-        <h2 id="resultTitle"></h2>
-        <div class="actions" id="actions"></div>
-        <pre id="output"></pre>
-      </div>
+      <div id="results"></div>
     </div>
 
     <script>
@@ -246,16 +293,16 @@
       const drop = $("drop"),
         fileInput = $("fileInput"),
         fileName = $("fileName");
-      const modeSel = $("mode"),
+      const agentList = $("agentList"),
+        toggleAll = $("toggleAll"),
         modelSel = $("model"),
         effortSel = $("effort"),
-        extraEl = $("extra"),
-        modeDesc = $("modeDesc");
+        extraEl = $("extra");
       const runBtn = $("runBtn"),
         statusEl = $("status");
-      const result = $("result"),
-        output = $("output"),
-        actions = $("actions");
+      const resultsEl = $("results");
+
+      const checkedModes = () => [...agentList.querySelectorAll("input:checked")].map((i) => i.value);
 
       function setFile(f) {
         selectedFile = f;
@@ -263,7 +310,11 @@
         updateRun();
       }
       function updateRun() {
-        runBtn.disabled = !(selectedFile && modeSel.value);
+        const n = checkedModes().length;
+        runBtn.disabled = !(selectedFile && n);
+        runBtn.textContent = n > 1 ? `Run ${n} agents` : "Run";
+        const total = agentList.querySelectorAll("input").length;
+        toggleAll.textContent = n === total && total ? "Select none" : "Select all";
       }
 
       drop.addEventListener("click", () => fileInput.click());
@@ -286,9 +337,13 @@
         if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
       });
 
-      modeSel.addEventListener("change", () => {
-        const m = modes.find((x) => x.name === modeSel.value);
-        modeDesc.textContent = m ? m.description : "";
+      toggleAll.addEventListener("click", () => {
+        const boxes = [...agentList.querySelectorAll("input")];
+        const turnOn = checkedModes().length !== boxes.length;
+        boxes.forEach((b) => {
+          b.checked = turnOn;
+          b.closest("label").classList.toggle("on", turnOn);
+        });
         updateRun();
       });
 
@@ -300,13 +355,21 @@
           models = data.models || [];
           efforts = data.efforts || [];
           $("exts").textContent = (data.sourceExts || []).join(" · ");
-          modeSel.innerHTML = "";
+          agentList.innerHTML = "";
           for (const m of modes) {
-            const o = document.createElement("option");
-            o.value = m.name;
-            o.textContent = m.name;
-            o.title = m.description;
-            modeSel.appendChild(o);
+            const lab = document.createElement("label");
+            lab.className = "chip";
+            lab.title = m.description;
+            const cb = document.createElement("input");
+            cb.type = "checkbox";
+            cb.value = m.name;
+            cb.addEventListener("change", () => {
+              lab.classList.toggle("on", cb.checked);
+              updateRun();
+            });
+            lab.appendChild(cb);
+            lab.appendChild(document.createTextNode(m.name));
+            agentList.appendChild(lab);
           }
           modelSel.innerHTML = "";
           for (const m of models) {
@@ -322,22 +385,62 @@
             o.textContent = e.label;
             effortSel.appendChild(o);
           }
-          modeSel.dispatchEvent(new Event("change"));
+          updateRun();
         } catch (e) {
           statusEl.className = "status err";
           statusEl.textContent = "Could not load config: " + e;
         }
       }
 
+      function renderResult(r) {
+        const panel = document.createElement("div");
+        panel.className = "panel";
+        const h2 = document.createElement("h2");
+        const actions = document.createElement("div");
+        actions.className = "actions";
+        const pre = document.createElement("pre");
+
+        if (r.ok) {
+          h2.textContent = r.outputPath;
+          pre.textContent = r.content;
+          const blob = new Blob([r.content], { type: r.isHtml ? "text/html" : "text/markdown" });
+          const url = URL.createObjectURL(blob);
+          const dl = document.createElement("a");
+          dl.href = url;
+          dl.download = r.outputPath.split("/").pop();
+          dl.innerHTML = "<button>Download</button>";
+          actions.appendChild(dl);
+          if (r.isHtml) {
+            const op = document.createElement("a");
+            op.href = url;
+            op.target = "_blank";
+            op.innerHTML = "<button>Open in new tab</button>";
+            actions.appendChild(op);
+          }
+        } else {
+          h2.textContent = r.mode + " — failed";
+          h2.style.color = "var(--err)";
+          pre.textContent = r.error || "Unknown error";
+        }
+        panel.appendChild(h2);
+        panel.appendChild(actions);
+        panel.appendChild(pre);
+        resultsEl.appendChild(panel);
+      }
+
       runBtn.addEventListener("click", async () => {
-        if (!selectedFile || !modeSel.value) return;
+        const picked = checkedModes();
+        if (!selectedFile || !picked.length) return;
         runBtn.disabled = true;
-        result.style.display = "none";
+        resultsEl.innerHTML = "";
         statusEl.className = "status";
-        statusEl.innerHTML = '<span class="spinner"></span>Running ' + modeSel.value + "… (can take a minute or two)";
+        statusEl.innerHTML =
+          '<span class="spinner"></span>Running ' +
+          (picked.length > 1 ? picked.length + " agents" : picked[0]) +
+          "… (can take a minute or two)";
 
         const fd = new FormData();
-        fd.append("mode", modeSel.value);
+        fd.append("modes", picked.join(","));
         fd.append("model", modelSel.value);
         fd.append("effort", effortSel.value);
         fd.append("extra", extraEl.value);
@@ -346,30 +449,16 @@
         try {
           const res = await fetch("/api/process", { method: "POST", body: fd });
           const data = await res.json();
-          if (!res.ok || !data.ok) throw new Error(data.error || "HTTP " + res.status);
+          if (!data.results) throw new Error(data.error || "HTTP " + res.status);
 
-          statusEl.className = "status ok";
-          statusEl.textContent = "Saved to " + data.outputPath;
+          for (const r of data.results) renderResult(r);
 
-          $("resultTitle").textContent = data.outputPath;
-          output.textContent = data.content;
-
-          actions.innerHTML = "";
-          const blob = new Blob([data.content], { type: data.isHtml ? "text/html" : "text/markdown" });
-          const url = URL.createObjectURL(blob);
-          const dl = document.createElement("a");
-          dl.href = url;
-          dl.download = data.outputPath.split("/").pop();
-          dl.innerHTML = "<button>Download</button>";
-          actions.appendChild(dl);
-          if (data.isHtml) {
-            const op = document.createElement("a");
-            op.href = url;
-            op.target = "_blank";
-            op.innerHTML = "<button>Open in new tab</button>";
-            actions.appendChild(op);
-          }
-          result.style.display = "block";
+          const okCount = data.results.filter((r) => r.ok).length;
+          const failCount = data.results.length - okCount;
+          statusEl.className = failCount ? "status err" : "status ok";
+          statusEl.textContent =
+            (okCount ? `Saved ${okCount} file${okCount > 1 ? "s" : ""} to Desktop` : "All agents failed") +
+            (failCount ? ` · ${failCount} failed` : "");
         } catch (e) {
           statusEl.className = "status err";
           statusEl.textContent = "Error: " + e.message;

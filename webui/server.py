@@ -22,12 +22,14 @@ import re
 import shutil
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 HOST = "127.0.0.1"
 PORT = 8765
 LLM_TIMEOUT = 480  # infographic / travel-guide can be slow
+MAX_PARALLEL = 3   # how many agents run at once when several are selected
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parent
@@ -262,6 +264,31 @@ def output_name_for(input_name: str, mode: str) -> str:
     return f"{stem}{suffix}"
 
 
+def process_one(mode: str, text: str, filename: str, model: str | None,
+                effort: str | None, extra: str | None) -> dict:
+    """Run a single agent over `text` and write its output file.
+
+    Returns a per-agent result dict (never raises) so that one failing agent
+    in a multi-agent batch doesn't abort the others.
+    """
+    try:
+        prompt = load_prompt(mode)
+        tools = MODE_TOOLS.get(mode, "")
+        result = run_claude(text, prompt, model=model, effort=effort,
+                            extra=extra, tools=tools)
+        out_path = OUTPUT_DIR / output_name_for(filename, mode)
+        out_path.write_text(result, encoding="utf-8")
+        return {
+            "mode": mode,
+            "ok": True,
+            "outputPath": str(out_path),
+            "isHtml": out_path.suffix.lower() == ".html",
+            "content": result,
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {"mode": mode, "ok": False, "error": str(exc)}
+
+
 # ---------------------------------------------------------------------------
 # Minimal multipart/form-data parser (stdlib only; `cgi` is gone in 3.13)
 # ---------------------------------------------------------------------------
@@ -329,8 +356,12 @@ class Handler(BaseHTTPRequestHandler):
 
         if self.path == "/api/config":
             try:
+                # Only offer agents that are actually runnable here (present in
+                # MODE_SUFFIX). debate-prep and the agent-reviewer meta-agent are
+                # discovered but intentionally not wired into the web UI.
+                runnable = [m for m in list_modes() if m["name"] in MODE_SUFFIX]
                 self._send_json({
-                    "modes": list_modes(),
+                    "modes": runnable,
                     "models": MODELS,
                     "efforts": EFFORTS,
                     "sourceExts": sorted(SOURCE_EXTS),
@@ -351,7 +382,9 @@ class Handler(BaseHTTPRequestHandler):
             body = self.rfile.read(length) if length else b""
             fields = parse_multipart(body, self.headers.get("Content-Type", ""))
 
-            mode = (fields.get("mode") or "").strip()
+            # Accept one or more agents. `modes` is the multi-agent field
+            # (comma-separated); `mode` is kept as a single-agent fallback.
+            modes_raw = (fields.get("modes") or fields.get("mode") or "").strip()
             model = (fields.get("model") or "").strip() or None
             effort = (fields.get("effort") or "").strip() or None
             extra = (fields.get("extra") or "").strip() or None
@@ -361,8 +394,15 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json({"error": "extra instructions too long (max 4000 chars)"}, 400)
                 return
 
-            if mode not in MODE_SUFFIX:
-                self._send_json({"error": f"unknown mode: {mode!r}"}, 400)
+            seen: set[str] = set()
+            modes = [m.strip() for m in modes_raw.split(",") if m.strip()]
+            modes = [m for m in modes if not (m in seen or seen.add(m))]
+            if not modes:
+                self._send_json({"error": "no agent selected"}, 400)
+                return
+            unknown = [m for m in modes if m not in MODE_SUFFIX]
+            if unknown:
+                self._send_json({"error": f"unknown mode(s): {', '.join(unknown)}"}, 400)
                 return
             if effort and effort not in VALID_EFFORTS:
                 self._send_json({"error": f"unknown effort: {effort!r}"}, 400)
@@ -386,26 +426,28 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-            # Save a copy of the input next to the output.
+            # Save a copy of the input next to the output(s).
             (OUTPUT_DIR / filename).write_text(raw, encoding="utf-8")
 
-            prompt = load_prompt(mode)
-            tools = MODE_TOOLS.get(mode, "")
-            result = run_claude(text, prompt, model=model, effort=effort,
-                                extra=extra, tools=tools)
+            # Run the selected agents. One is run inline; several run in a
+            # bounded thread pool so independent `claude -p` processes overlap.
+            # ThreadPoolExecutor.map preserves the input order of `modes`.
+            if len(modes) == 1:
+                results = [process_one(modes[0], text, filename, model, effort, extra)]
+            else:
+                with ThreadPoolExecutor(max_workers=min(len(modes), MAX_PARALLEL)) as ex:
+                    results = list(ex.map(
+                        lambda m: process_one(m, text, filename, model, effort, extra),
+                        modes,
+                    ))
 
-            out_path = OUTPUT_DIR / output_name_for(filename, mode)
-            out_path.write_text(result, encoding="utf-8")
-
+            overall_ok = any(r["ok"] for r in results)
             self._send_json({
-                "ok": True,
-                "mode": mode,
+                "ok": overall_ok,
                 "model": model,
                 "effort": effort,
-                "outputPath": str(out_path),
-                "isHtml": out_path.suffix.lower() == ".html",
-                "content": result,
-            })
+                "results": results,
+            }, 200 if overall_ok else 500)
         except Exception as exc:  # noqa: BLE001
             self._send_json({"ok": False, "error": str(exc)}, 500)
 
