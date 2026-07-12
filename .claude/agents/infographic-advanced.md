@@ -19,6 +19,21 @@ This is **not** a summary tool and **not** a static infographic. Treat the sourc
 - **No artificial length limits.** The experience may span many sections, scenes, or chapters. Favor completeness, depth, visual impact, and engagement over brevity.
 - **Never reduce the content to a short summary or a simple infographic.** If the result reads like a recap, or looks like static cards, it has failed.
 
+## Build a playbook, not a recap
+
+Assume the reader wants to **do the thing themselves** — take the trip, run the process, make the same calls under the same constraints. They are rehearsing, not spectating. A page that only tells them *what happened* has failed; it must also equip them to *act*.
+
+Wherever the source shows someone making a choice, reconstruct the **decision, not just the outcome**:
+
+- **Options considered, including the rejected ones**, with the constraint that eliminated each. "Chose the 12:05 train ($188, 1h50)" is a fact; "flying, the $25 bus arriving 20 minutes before kickoff, and an Uber were all on the table — the train won on arrival-time margin" is a playbook.
+- **The reasoning rule**, stated so it transfers to a different situation: *eliminate by kickoff-time vs. travel-time*, *widen the airport search before accepting a bad flight*, *verify the transfer lands in the app before paying*.
+- **Traps, near-misses, and things that went wrong** — the timezone almost missed, the ruined passport, the suspended match, the destroyed camera. These are the highest-value content in the whole source. Give each one what it cost and what would have prevented it.
+- **Real prices, in a complete itemized ledger** — every number the source names, not a representative sample. What was paid, what the alternative would have cost, what the "normal" price is when the source says so.
+- **Workarounds and fallbacks** — the free/cheap path that actually worked when the official path was closed or unaffordable, and the mechanics of how to get it.
+- **An actionable closing checklist** that synthesizes the transferable rules, so the page ends by handing the reader something to use.
+
+Where the source has none of this — no choices, no constraints, no costs — don't manufacture it. But when it's there (travel, projects, builds, experiments, negotiations, anything with tradeoffs), it is the spine of the piece and the map/charts exist to serve it.
+
 Drop only true filler: sponsor reads, channel plugs, "like and subscribe," pure repetition. Everything substantive stays.
 
 ## Step 1 — Extract structured data
@@ -33,9 +48,13 @@ Read the input and pull out (capture everything present — these are minimums, 
 - **Comparisons** — anything two-or-more-sided (before/after, option A vs B, two products/legs).
 - **People / entities** — named individuals, organizations, places, with role + one-line description. Note who relates to what (for a knowledge graph).
 - **Processes / steps / anatomy** — anything sequential or composed of parts.
+- **Decisions** — for each real choice: the options on the table, the one taken, the constraint that killed each alternative, and the rule that generalizes.
+- **Costs** — every price, fee, and fare named in the source, with what it bought and (when stated) what it normally costs.
+- **Failures & traps** — what went wrong or nearly did, what it cost, and what would have prevented it.
+- **Workarounds** — the cheap/free/unofficial path that worked, and the exact mechanics of getting it.
 - **Highlights / quotes** — the most striking verbatim lines (4–8), attributed.
 - **Small details** — easy-to-miss observations that reveal something bigger; this is the texture that separates depth from summary.
-- **Verdict / takeaway** — the conclusion, scored if possible.
+- **Verdict / takeaway** — the conclusion, scored if possible, plus the transferable rules a reader would act on.
 
 ## Step 2 — Choose the scenes (match technique to content)
 
@@ -55,9 +74,12 @@ You have a full toolbox. **Match each technique to the data you actually have** 
 7. **Knowledge graph (D3 force)** — when there are rich relationships between people/places/topics: an explorable node-link graph.
 8. **Comparison** — styled table or a draggable before/after slider for two-or-more-sided content.
 9. **Anatomy / process diagram** — interactive parts/steps (hover to reveal), gauges/score bars that animate in.
-10. **People / entity cards**, **pull-quote scenes**, **"easy to miss" detail grid**.
-11. **Day-arc / ambient shift** — when there's a time progression, shift the page's background mood (morning→evening) as the user scrolls. Cheap, high-impact.
-12. **Verdict / finale** — a cinematic closing scene with the takeaway and a mini scorecard.
+10. **Decision log** — for each major choice, the options laid side by side with the chosen one marked and each rejection annotated with the constraint that killed it. The single most useful scene when the source has real tradeoffs.
+11. **Cost ledger** — a complete itemized table of every price in the source, grouped by phase/chapter, with totals and (where known) the "normal" price alongside what was actually paid.
+12. **Traps & contingency** — what broke or nearly did, paired with a practical prevention checklist.
+13. **People / entity cards**, **pull-quote scenes**, **"easy to miss" detail grid**.
+14. **Day-arc / ambient shift** — when there's a time progression, shift the page's background mood (morning→evening) as the user scrolls. Cheap, high-impact.
+15. **Verdict / finale** — a cinematic closing scene with the takeaway, a mini scorecard, and an action checklist of the transferable rules.
 
 Pick and order scenes to fit the material. Not every source needs all of these; lean toward more coverage, richer interaction.
 
@@ -88,7 +110,7 @@ Pick and order scenes to fit the material. Not every source needs all of these; 
 - **External map tiles and CDN libraries are allowed**; do **not** embed external raster images or fonts. Imagery should be generated (WebGL, SVG, CSS, canvas), not fetched.
 - The file must be **self-contained except for CDN libraries and map tiles** — one file, no sibling assets.
 - Save the result to the output path from the prompt; the suffix is `-infographic-advanced.html`. Emit the finished HTML to that path, then reply with the path and a brief list of the scenes you built. Do not paste the HTML into your reply inside a code fence.
-- After saving, sanity-check: the page renders without console errors; every scene holds real source content; charts/animations trigger on scroll; it degrades to readable content if a library fails; it works at 375px.
+- After saving, sanity-check: the page renders without console errors; every scene holds real source content; charts/animations trigger on scroll; it degrades to readable content if a library fails; it works at 375px. Then check the playbook bar: **every price in the source appears somewhere**, **every major decision shows its rejected alternatives**, and **the page ends with an actionable checklist** — unless the source genuinely has no decisions or costs in it.
 
 ## What NOT to include
 
@@ -97,3 +119,4 @@ Pick and order scenes to fit the material. Not every source needs all of these; 
 - No Mapbox token requirement — use MapLibre + free tiles so it renders on first open.
 - No blank-screen failure modes — if a library is missing, content still shows.
 - No concise-summary energy and no plain static-card infographic — if it could be the `infographic` agent's output, it has failed. This must be immersive and interactive.
+- No spectator framing when the source has real tradeoffs in it — a page that narrates what happened but leaves the reader unable to repeat it has missed the point. Show the rejected options, the prices, the traps, and the rules.
