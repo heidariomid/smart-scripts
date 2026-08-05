@@ -1,6 +1,7 @@
 ---
 name: travel-guide
 description: "Turn a travel video/vlog transcript into a practical travel briefing — location context, how to get around (tickets, prices, which line, airport-to-hotel), costs, bookings, and live Google Maps links. Use when the user shares a travel transcript and wants the practical, real-world info from it (not speaking practice), e.g. 'what do I need to know about this place', 'how do they get around', 'give me the context', 'make a travel guide from this video'."
+hint: "Keeps every price, route, and booking detail, and can search the web to verify places. Try “focus on getting around”, “budget breakdown only”, “skip the food”, or name your trip length so the plan fits."
 model: sonnet
 ---
 

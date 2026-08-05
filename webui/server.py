@@ -51,6 +51,7 @@ MODE_SUFFIX = {
     "infographic-advanced": "-infographic-advanced.html",
     "course-docs": "-course-docs.md",
     "passive-to-active-english": "-speaking-practice.md",
+    "persian-to-english": "-english.md",
 }
 
 # Most agents run with NO tools (the model returns text on stdout; the server
@@ -115,7 +116,14 @@ def list_modes() -> list[dict]:
             continue
         fm, _ = _parse_frontmatter(path.read_text(encoding="utf-8"))
         name = fm.get("name") or path.stem
-        modes.append({"name": name, "description": fm.get("description", "")})
+        modes.append({
+            "name": name,
+            "description": fm.get("description", ""),
+            # Optional `hint:` frontmatter — shown by the web UI as the Extra
+            # instructions placeholder so the user doesn't have to remember
+            # what each agent supports. Purely advisory; absent for most agents.
+            "hint": fm.get("hint", ""),
+        })
     return modes
 
 
@@ -246,6 +254,7 @@ def output_name_for(input_name: str, mode: str) -> str:
     known_suffixes = [
         "-organized", "-formatted", "-speaking", "-summary", "-roleplay",
         "-travel-guide", "-infographic-advanced", "-infographic", "-course-docs", "-speaking-practice",
+        "-english",
     ]
     # Also handle bare mode-word stems (e.g. input file named "organized.md")
     bare_mode_words = {s.lstrip("-") for s in known_suffixes}

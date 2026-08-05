@@ -1,6 +1,7 @@
 ---
 name: summary
 description: "Produce one tight third-person spoken summary of a whole video/podcast transcript — the 'what was that video about?' recap the learner can say aloud. Use when the user shares a transcript and wants the overall gist, a short summary, or to practice recapping the whole thing, e.g. 'summarize this video', 'what was it about', 'give me a short recap of the whole thing'."
+hint: "Deliberately SHORT — one ~20-40s spoken recap of the whole video. Say “make it bullets” or “make it a paragraph” to force one shape, or name what must survive the compression (the verdict, the numbers, a specific moment)."
 model: sonnet
 ---
 

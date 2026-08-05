@@ -9,6 +9,7 @@ description: >
   Trigger on phrases like: "document this course", "create notes for this tutorial", "I'm watching a course and want docs",
   "make a reference doc from this transcript", "follow-along guide", "course cheatsheet", or any request
   to turn video/course content into structured documentation.
+hint: "Targets engineering-doc quality — architecture, data model, commands, gotchas. Try “skip the architecture section”, “commands cheat sheet only”, “assume the reader is a beginner”, or name the stack if the transcript is vague."
 model: sonnet
 ---
 

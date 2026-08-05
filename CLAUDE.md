@@ -17,7 +17,7 @@ the infographics). There are **two surfaces**, and they share one prompt source:
 that file's body as the LLM prompt; Claude Code uses the same file as a subagent definition. There
 is no separate skills layer and no CLI — don't reintroduce prompt duplication.
 
-> The web UI exposes **9** of the 10 transcript→artifact agents — `debate-prep` is missing from
+> The web UI exposes **10** of the 11 transcript→artifact agents — `debate-prep` is missing from
 > `MODE_SUFFIX` in [webui/server.py](webui/server.py). Add it there if you want it in the UI.
 
 > **Non-UI meta-agent:** [.claude/agents/agent-reviewer.md](.claude/agents/agent-reviewer.md) is a
@@ -71,6 +71,13 @@ python3 -c "import sys; sys.path.insert(0,'webui'); import server; \
 2. To expose it in the web UI, add one entry to `MODE_SUFFIX` in [webui/server.py](webui/server.py):
    `"<name>": "-<suffix>.md"` (or `.html`). The server auto-discovers the prompt file; no other
    server change is needed.
+3. *(Optional)* Add a `hint:` line to the frontmatter. The web UI shows it as the **Extra
+   instructions** placeholder when that agent is checked, so users don't have to remember what the
+   agent supports (e.g. `persian-to-english` advertises its "add friend chat section" flag there).
+   Only add one for agents with a non-obvious option — most agents have no `hint` and fall back to
+   the generic placeholder. **The frontmatter parser splits on the first `:`, so the hint text must
+   not contain a colon** or it will be silently truncated. Multiple agents checked → their hints are
+   listed together, prefixed by agent name.
 
 ## Agent routing — automatic dispatch
 
@@ -90,6 +97,14 @@ writes its own output file using the suffix shown.
 | "document this course", "course notes", "follow-along guide", "course cheatsheet", "reference doc from this tutorial" | `course-docs` | `-course-docs.md` |
 | "help me practice English", "give me sentences to repeat", "what can I say from this video", "tense practice" | `passive-to-active-english` | `-speaking-practice.md` |
 | "debate prep", "argue this", "for and against", "practice arguing", "defend a position", "steelman" | `debate-prep` | `-debate-prep.md` |
+| A **Persian/Farsi** transcript + "turn this into English", "use persian-to-english", "I want to try saying this myself first" | `persian-to-english` | `-english.md` |
+
+`persian-to-english` is the only agent with a **conditional output section**. Its input is a *Persian*
+transcript (all others take English); it outputs casual American English scene-by-scene so the learner
+can attempt each scene aloud first and compare after. By default it emits only the 🎥 vlog version —
+mentioning "friend" / "friend chat" / "telling a friend" in the request adds a second 💬 past-tense
+retelling per scene. In the web UI there are no flags, so that phrase goes in the **Additional
+instructions** box (it reaches the prompt via `sanitize_prompt(..., extra=...)`).
 
 `passive-to-active-english` does tense-focus + phrase practice (Recaps → a Tense Focus Practice block
 that re-tells each scene *naturally* in purpose-labeled time frames → Phrases + Fill-in-the-Blank),

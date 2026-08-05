@@ -309,6 +309,25 @@
         fileName.textContent = f ? "Selected: " + f.name : "";
         updateRun();
       }
+      const DEFAULT_EXTRA_PLACEHOLDER =
+        "Add anything to steer the output — tone, focus, length, sections to emphasize, things to skip… " +
+        "Appended to the agent's prompt and takes priority where it conflicts.";
+
+      // Show the selected agent's `hint:` frontmatter as the placeholder, so the
+      // user doesn't have to remember what each agent supports. With several
+      // agents picked, show every hint that exists; with none, fall back.
+      function updateExtraHint() {
+        const picked = checkedModes();
+        const hints = picked
+          .map((n) => modes.find((m) => m.name === n))
+          .filter((m) => m && m.hint)
+          .map((m) => (picked.length > 1 ? m.name + " — " + m.hint : m.hint));
+        extraEl.placeholder = hints.length
+          ? hints.join("\n\n")
+          : DEFAULT_EXTRA_PLACEHOLDER;
+        extraEl.rows = hints.length > 1 ? 5 : 3;
+      }
+
       function updateRun() {
         const n = checkedModes().length;
         runBtn.disabled = !(selectedFile && n);
@@ -345,6 +364,7 @@
           b.closest("label").classList.toggle("on", turnOn);
         });
         updateRun();
+        updateExtraHint();
       });
 
       async function loadConfig() {
@@ -366,11 +386,13 @@
             cb.addEventListener("change", () => {
               lab.classList.toggle("on", cb.checked);
               updateRun();
+              updateExtraHint();
             });
             lab.appendChild(cb);
             lab.appendChild(document.createTextNode(m.name));
             agentList.appendChild(lab);
           }
+          updateExtraHint();
           modelSel.innerHTML = "";
           for (const m of models) {
             const o = document.createElement("option");

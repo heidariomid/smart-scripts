@@ -1,6 +1,7 @@
 ---
 name: roleplay
 description: "Turn a transcript with dialogue into a two-sided You/Partner practice script so the learner can speak one role aloud and rehearse real conversation. Use when the user shares a transcript (interview, vlog with exchanges, conversation, lesson) and wants to practice speaking one side, do a role-play, or rehearse turn-taking, e.g. 'make a roleplay from this', 'let me practice one side of this conversation', 'two-person script to practice'."
+hint: "Builds a two-sided You/Partner script. Say which side you want to practice (“I want to be the local, not the tourist”), or ask for “shorter scenes”, “more back-and-forth per scene”, or fewer/more scenes."
 model: sonnet
 ---
 

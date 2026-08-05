@@ -1,6 +1,7 @@
 ---
 name: speaking
 description: "Turn a transcript into curated spoken-English practice material — verbatim high-value lines grouped by scene, each followed by a third-person Recap paragraph to read aloud. Use when the user shares a transcript and wants speaking practice, lines to repeat, or a rehearsal corpus, e.g. 'make a speaking practice from this', 'give me lines to practice', 'create speaking material', 'speaking mode'."
+hint: "Extracts verbatim lines only, never invented ones. Try “focus on scenes with dialogue”, “raise the difficulty floor”, “more lines per scene”, or name a topic to prioritize."
 model: sonnet
 ---
 

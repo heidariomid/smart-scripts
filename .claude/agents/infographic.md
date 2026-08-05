@@ -1,6 +1,7 @@
 ---
 name: infographic
 description: "Turn a transcript or text file into a self-contained HTML infographic — visual cards, stat callouts, timelines, and color sections, all in one file with embedded CSS. Use when the user wants to visualize content, e.g. 'make an infographic', 'visualize this', 'HTML visual', 'make a graphic', 'visual summary', 'turn this into a visual'."
+hint: "Offline, CSS-only, no JavaScript — works with no internet and prints cleanly. Steer with “dark theme”, “fewer sections”, “more charts and tables”, or a color direction. For 3D/scroll animation use infographic-advanced instead."
 model: sonnet
 ---
 

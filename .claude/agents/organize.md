@@ -1,6 +1,7 @@
 ---
 name: organize
 description: "Reformat raw text or transcripts into clean, faithful Markdown — preserving every word. Use when the user shares notes, a transcript, or raw text and wants it structured as Markdown without changing any content, e.g. 'organize this', 'format these notes', 'clean up this transcript', 'make this into Markdown'."
+hint: "Reformats only — every word is preserved exactly, nothing summarized. Steer the STRUCTURE here — e.g. “use more tables”, “split into more sections”, “keep headings flat”, “wrap all commands in code blocks”."
 model: sonnet
 ---
 

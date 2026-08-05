@@ -1,6 +1,7 @@
 ---
 name: infographic-advanced
 description: "Turn a transcript, travel guide, research doc, or structured text into a world-class INTERACTIVE digital experience — an immersive, library-powered single HTML page with a WebGL hero (Three.js), data-driven D3 charts, GSAP scrollytelling, scroll-scrubbed motion, and a real MapLibre + Deck.gl map when geography is present. Use when the user wants something far beyond a static infographic, e.g. 'immersive', 'interactive experience', '3D', 'scrollytelling', 'cinematic', 'premium visual', 'data-driven storytelling', 'NYT/Apple/National Geographic style', 'make this extraordinary'. For a plain offline/print-friendly CSS-only visual with no JavaScript, use `infographic` instead."
+hint: "Immersive and library-powered (3D, scroll animation, maps) — NEEDS internet on first open. Try “no 3D hero”, “focus on the map”, “more charts”, or a mood like “dark cinematic”. For a fully offline or printable page use infographic instead."
 model: sonnet
 ---
 

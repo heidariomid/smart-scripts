@@ -1,6 +1,7 @@
 ---
 name: passive-to-active-english
 description: "Convert video/podcast/interview transcripts and subtitles into a speaking practice document with scene Recaps, Tense Practice drills, and a Fill-in-the-Blank phrase section. Use this skill whenever a user provides a YouTube transcript, video subtitles, podcast transcript, vlog, interview, lecture, or meeting transcript and wants to practice speaking, build conversational fluency, rehearse natural sentences, imitate a speaker's style, or extract real spoken English to repeat aloud — even if they phrase it casually like \"help me practice English with this,\" \"turn this into speaking practice,\" \"give me sentences to repeat,\" or \"what can I say from this video.\" ALWAYS use this skill when the user shares any transcript content alongside a request to speak, practice, or use English — do not produce a chat response when a full practice document is appropriate."
+hint: "Tense-practice drills plus fill-in-the-blank frames — NOT verbatim lines (use speaking for those). Try “focus on past tense”, “add future tense”, “more fill-in-the-blank”, or “fewer scenes, more depth”."
 model: sonnet
 ---
 
