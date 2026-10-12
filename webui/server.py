@@ -52,6 +52,7 @@ MODE_SUFFIX = {
     "course-docs": "-course-docs.md",
     "passive-to-active-english": "-speaking-practice.md",
     "persian-to-english": "-english.md",
+    "english-to-persian": "-persian.md",
 }
 
 # Most agents run with NO tools (the model returns text on stdout; the server

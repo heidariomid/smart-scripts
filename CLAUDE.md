@@ -17,7 +17,7 @@ the infographics). There are **two surfaces**, and they share one prompt source:
 that file's body as the LLM prompt; Claude Code uses the same file as a subagent definition. There
 is no separate skills layer and no CLI — don't reintroduce prompt duplication.
 
-> The web UI exposes **10** of the 11 transcript→artifact agents — `debate-prep` is missing from
+> The web UI exposes **11** of the 12 transcript→artifact agents — `debate-prep` is missing from
 > `MODE_SUFFIX` in [webui/server.py](webui/server.py). Add it there if you want it in the UI.
 
 > **Non-UI meta-agent:** [.claude/agents/agent-reviewer.md](.claude/agents/agent-reviewer.md) is a
@@ -98,6 +98,7 @@ writes its own output file using the suffix shown.
 | "help me practice English", "give me sentences to repeat", "what can I say from this video", "tense practice" | `passive-to-active-english` | `-speaking-practice.md` |
 | "debate prep", "argue this", "for and against", "practice arguing", "defend a position", "steelman" | `debate-prep` | `-debate-prep.md` |
 | A **Persian/Farsi** transcript + "turn this into English", "use persian-to-english", "I want to try saying this myself first" | `persian-to-english` | `-english.md` |
+| An **English** YouTube/talk transcript + "important parts in Persian", "use english-to-persian", "turn this video into Persian" | `english-to-persian` | `-persian.md` |
 
 `persian-to-english` is the only agent with a **conditional output section**. Its input is a *Persian*
 transcript (all others take English); it outputs casual American English scene-by-scene so the learner
@@ -105,6 +106,13 @@ can attempt each scene aloud first and compare after. By default it emits only t
 mentioning "friend" / "friend chat" / "telling a friend" in the request adds a second 💬 past-tense
 retelling per scene. In the web UI there are no flags, so that phrase goes in the **Additional
 instructions** box (it reaches the prompt via `sanitize_prompt(..., extra=...)`).
+
+`english-to-persian` is the other language-direction agent, but a different job: English YouTube in,
+organized **readable** Persian of the **important ideas** out. It highlights key ideas without
+summarizing them — full depth, no titles, no added opinions, no translation-calques. Meaning-correct
+is not enough if the text still smells like translation. The voice is connected explanatory Persian
+so the reader can follow the argument — not a third-person spoken story, not chopped one-breath
+lines. Persian Markdown is always right-to-left (`<div dir="rtl">` wrapper).
 
 `passive-to-active-english` does tense-focus + phrase practice (Recaps → a Tense Focus Practice block
 that re-tells each scene *naturally* in purpose-labeled time frames → Phrases + Fill-in-the-Blank),

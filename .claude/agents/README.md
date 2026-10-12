@@ -21,6 +21,8 @@ Claude Code and the web UI ([../../webui/server.py](../../webui/server.py)).
 | `course-docs` | Engineering-quality reference doc from a course/tutorial transcript. |
 | `infographic` | Self-contained, **offline / CSS-only / no-JS** HTML infographic — visual cards, stat callouts, timelines, color sections. The gold-standard depth prompt. |
 | `infographic-advanced` | Immersive, **library-powered** interactive HTML (Three.js + D3 + GSAP + MapLibre/Deck.gl). **Needs internet on first open** for CDN libs + map tiles. |
+| `persian-to-english` | Casual American English, scene by scene, from a Persian transcript — model answer for production practice. Optional 💬 friend-retelling. |
+| `english-to-persian` | Important ideas from an English YouTube/talk transcript as readable connected Persian — full depth, no spoken-story narrator, no summary, no translation smell, RTL. |
 
 ## Ideas — not built yet
 

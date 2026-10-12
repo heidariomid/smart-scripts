@@ -36,7 +36,7 @@ code in memory: `lsof -ti tcp:8765 | xargs kill -9` then re-run.
   those files, so the web UI and Claude Code share one source of truth.
 - Output suffixes come from `MODE_SUFFIX` in `server.py`: `-organized.md` (`-formatted.md` for `.md`
   input), `-speaking.md`, `-summary.md`, `-roleplay.md`, `-travel-guide.md`, `-course-docs.md`,
-  `-speaking-practice.md`, `-infographic.html`, `-infographic-advanced.html`. (`debate-prep` is not
-  wired into the UI yet.)
+  `-speaking-practice.md`, `-english.md`, `-persian.md`, `-infographic.html`,
+  `-infographic-advanced.html`. (`debate-prep` is not wired into the UI yet.)
 - `infographic` / `infographic-advanced` and `travel-guide` are the slowest modes; the server uses a
   480s LLM timeout.

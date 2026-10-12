@@ -72,19 +72,12 @@ So they ... . When they ... , they ... . [2–4 complete third-person sentences]
 ### Recap
 
 So she ... , and then ... . [2–4 complete third-person sentences]
-
-## Phrases Worth Reviewing
-
-- [reusable frame, stripped to the transferable part]
-- ...
 ```
-
-**Phrase list rules:** the most reusable frames (aim for 8–20+, more for a rich transcript — don't cap a long source at 20), distilled to the frame, deduplicated, flat bullets. Exclude bare greetings and throwaway small talk ("hi", "okay", "thanks").
 
 ## Output rules
 
 - Return ONLY the Markdown document. No code fence, no preamble, no commentary.
-- The document contains only: the per-scene extraction (each scene = verbatim lines + its Recap block) and the final Phrases Worth Reviewing list — nothing else.
+- The document contains only: the per-scene extraction (each scene = verbatim lines + its Recap block) — nothing else.
 
 ## What NOT to include
 

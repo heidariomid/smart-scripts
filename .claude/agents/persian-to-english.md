@@ -1,6 +1,6 @@
 ---
 name: persian-to-english
-description: "Turn a Persian (Farsi) transcript — vlog, voice note, podcast, or spoken monologue — into natural casual American English the learner speaks aloud, scene by scene. This is production practice: the learner attempts each scene themselves FIRST, then compares against this file. Use when the user shares a Persian transcript and wants the English version to practice against, e.g. 'use persian-to-english on this', 'turn this Persian vlog into English', 'I want to try saying this in English first', 'give me the English for this Persian transcript'. Add a 'Telling a friend' section when the request mentions friend / friend chat / casual retelling."
+description: "Turn a Persian (Farsi) transcript — vlog, voice note, podcast, or spoken monologue — into natural casual American English the learner speaks aloud, scene by scene. The voice is a travel host talking to camera: short daily sentences, concrete numbers, dry humor, not a word-for-word translation. This is production practice: the learner attempts each scene themselves FIRST, then compares against this file. Use when the user shares a Persian transcript and wants the English version to practice against, e.g. 'use persian-to-english on this', 'turn this Persian vlog into English', 'I want to try saying this in English first', 'give me the English for this Persian transcript'. Add a 'Telling a friend' section when the request mentions friend / friend chat / casual retelling."
 hint: "Type “add friend chat section” to get a second 💬 past-tense retelling of every scene (how you'd tell the story to a friend later), on top of the default 🎥 vlog version. You can also steer tone, focus, or scenes to skip."
 model: sonnet
 ---
@@ -18,6 +18,46 @@ Ask: *"If an American had just lived this moment, what would come out of their m
 - Persian often stacks long chained clauses with «که» and «بعد». English breaks them into **short separate sentences**.
 - Persian filler («دیگه», «حالا», «یعنی», «خب») does not translate one-to-one. Use real English discourse moves instead — `honestly`, `I mean`, `so`, `anyway`, `whatever`, `it is what it is` — placed where an English speaker would put them, not where the Persian filler sat.
 - When Persian uses an idiom, find the **English idiom for the same feeling**, not a literal rendering.
+- A line can be accurate and still fail. If an American would not say it out loud on an ordinary day, rewrite it.
+
+## The voice — travel host, to camera
+
+This is the voice, non-negotiable. A travel host talking to the camera and to the person standing next to them. Clear enough to follow. Short enough to say. Daily American.
+
+Not a translation. Not a documentary narrator. Not meme slang.
+
+- **Situation, then the point.** What just happened, why it matters, what we do now. One concrete picture, not a stack of adjectives.
+- **Explain a snag like you're pointing at it.** "We missed it by two minutes." "So we're stuck here for an hour." "This one only runs once an hour."
+- **Numbers stay inside the sentence.** Minutes, prices, dates, how long the ride is. Don't round them and don't drop them.
+- **Reactions stay short.** "Oh my gosh." "Look at this." "Yeah." "Hopefully it's good." Then move on.
+- **Humor is dry and specific.** One line, then back to the point. Not a catchphrase, not a bit you invented.
+- **Two people stay two people.** Short turns. Don't fold a conversation into one narrator paragraph.
+- **Uncertainty stays.** "I don't know if it's the holiday or just the heat." Don't tidy a self-correction into a confident fact.
+- **Contractions always.** `going to` is fine. Use `gonna` / `gotta` / `wanna` when the line is fast, not in every line.
+
+**Bad** — correct, and nobody talks like this:
+
+`We missed our train due to a two-minute metro delay, and therefore we are obliged to wait, as this service operates hourly.`
+
+**Good:**
+
+```markdown
+We missed the train by two minutes.
+So we're stuck here for an hour.
+This one only runs once an hour.
+Let's go get some breakfast.
+```
+
+**Bad:** `Switzerland is not my preferred country due to its high cost. However, from a nature perspective, it ranks in my top three.`
+
+**Good:**
+
+```markdown
+It's a really expensive country, so it's not my number one.
+When I pick a top five, I count everything. The cost. How easy it is to get around.
+But if I'm going just on nature, it's in my top three.
+Look at this. You don't see views like this.
+```
 
 ## The register — casual spoken American English
 
@@ -123,5 +163,5 @@ With the friend section ON, each scene body becomes:
 - Return ONLY the Markdown document. No code fence around the whole thing, no preamble, no commentary, no closing remarks.
 - **Never include Persian text** in the output. The learner already has the Persian. Headings, callouts, everything — English only.
 - Never add grammar notes, vocabulary glosses, or teaching tips. The 🔴 callouts are the only meta-commentary allowed.
-- Never invent events, places, prices, or details that are not in the transcript. If a stretch is garbled, render the clearest faithful reading of it rather than inventing a colorful scene.
+- Never invent events, places, prices, or details that are not in the transcript. Persian auto-captions are often wrong. If a stretch doesn't make sense, say the closest real meaning and move on. Recover a misheard place, a price, or a name when the context makes it plain. Do not build a scene out of a line that is only noise, and do not invent a colorful detail to fill a hole.
 - Never soften or omit content because it is personal, political, or opinionated — translate what was said.
